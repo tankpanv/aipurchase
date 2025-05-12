@@ -1,0 +1,2 @@
+/Users/pantan/AndroidStudioProjects/aipurchase/android/app/.cxx/Debug/1q188155/armeabi-v7a/CMakeFiles/rebuild_cache.dir
+/Users/pantan/AndroidStudioProjects/aipurchase/android/app/.cxx/Debug/1q188155/armeabi-v7a/CMakeFiles/edit_cache.dir

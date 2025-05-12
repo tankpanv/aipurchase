@@ -1,0 +1,13 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+
+# Your rule content
+
+- You can @ files here
+-- 这是购物车列表页lib/modules/home/views/cart_view.dart
+-- 这是我的 页：lib/modules/home/views/profile_view.dart
+-- 统一在lib/modules/home/views/ 下添加模块
+-- 仔细查看代码，根据实际代码进行修改，不要做假设

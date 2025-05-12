@@ -1,0 +1,312 @@
+{
+  "version": "1.0",
+  "commands": [
+    {
+      "id": "search_products",
+      "name": "搜索商品",
+      "keywords": ["搜索", "查找", "查询", "找商品", "搜商品"],
+      "action": "Get.toNamed(Routes.SEARCH, arguments: {'keyword': keyword})",
+      "dependencies": [],
+      "description": "通过关键词搜索商品",
+      "params": [
+        {
+          "name": "keyword",
+          "type": "string",
+          "required": true,
+          "description": "搜索关键词"
+        }
+      ]
+    },
+    {
+      "id": "view_product_detail",
+      "name": "查看商品详情",
+      "keywords": ["商品详情", "产品详情", "查看详情", "详细信息"],
+      "action": "Get.toNamed(Routes.PRODUCT_DETAIL, arguments: {'productId': productId})",
+      "dependencies": ["search_products"],
+      "description": "查看商品的详细信息",
+      "params": [
+        {
+          "name": "productId",
+          "type": "integer",
+          "required": true,
+          "description": "商品ID"
+        }
+      ]
+    },
+    {
+      "id": "add_to_cart",
+      "name": "加入购物车",
+      "keywords": ["加购", "加入购物车", "添加购物车", "放入购物车"],
+      "action": "CartController.addToCart(productId, quantity)",
+      "dependencies": ["view_product_detail"],
+      "description": "将商品添加到购物车",
+      "params": [
+        {
+          "name": "productId",
+          "type": "integer",
+          "required": true,
+          "description": "商品ID"
+        },
+        {
+          "name": "quantity",
+          "type": "integer",
+          "required": true,
+          "description": "购买数量"
+        }
+      ]
+    },
+    {
+      "id": "view_cart",
+      "name": "查看购物车",
+      "keywords": ["购物车", "查看购物车", "我的购物车"],
+      "action": "Get.toNamed(Routes.CART)",
+      "dependencies": [],
+      "description": "查看购物车中的商品",
+      "params": []
+    },
+    {
+      "id": "create_order",
+      "name": "创建订单",
+      "keywords": ["下单", "创建订单", "提交订单", "生成订单"],
+      "action": "OrderController.createOrder(addressId, items)",
+      "dependencies": ["add_to_cart", "select_address"],
+      "description": "从购物车中选择商品创建订单",
+      "params": [
+        {
+          "name": "addressId",
+          "type": "integer",
+          "required": true,
+          "description": "收货地址ID"
+        },
+        {
+          "name": "items",
+          "type": "array",
+          "required": true,
+          "description": "订单商品列表"
+        }
+      ]
+    },
+    {
+      "id": "pay_order",
+      "name": "支付订单",
+      "keywords": ["支付", "付款", "订单支付", "付钱"],
+      "action": "OrderController.payOrder(orderNo)",
+      "dependencies": ["create_order"],
+      "description": "支付已创建的订单",
+      "params": [
+        {
+          "name": "orderNo",
+          "type": "string",
+          "required": true,
+          "description": "订单号"
+        },
+        {
+          "name": "paymentMethod",
+          "type": "string",
+          "required": true,
+          "description": "支付方式：wechat或alipay"
+        }
+      ]
+    },
+    {
+      "id": "view_orders",
+      "name": "查看订单列表",
+      "keywords": ["订单列表", "我的订单", "查看订单", "订单记录"],
+      "action": "Get.toNamed(Routes.ORDERS, arguments: {'status': status})",
+      "dependencies": [],
+      "description": "查看所有订单或特定状态的订单",
+      "params": [
+        {
+          "name": "status",
+          "type": "string",
+          "required": false,
+          "description": "订单状态：pending_payment/pending_delivery/pending_receipt/completed/cancelled"
+        }
+      ]
+    },
+    {
+      "id": "view_order_detail",
+      "name": "查看订单详情",
+      "keywords": ["订单详情", "订单信息", "查看订单详情"],
+      "action": "Get.toNamed(Routes.ORDER_DETAIL, parameters: {'orderNo': orderNo})",
+      "dependencies": ["view_orders"],
+      "description": "查看特定订单的详细信息",
+      "params": [
+        {
+          "name": "orderNo",
+          "type": "string",
+          "required": true,
+          "description": "订单号"
+        }
+      ]
+    },
+    {
+      "id": "cancel_order",
+      "name": "取消订单",
+      "keywords": ["取消订单", "退单", "撤销订单"],
+      "action": "OrderController.cancelOrder(orderNo)",
+      "dependencies": ["view_order_detail"],
+      "description": "取消未支付的订单",
+      "params": [
+        {
+          "name": "orderNo",
+          "type": "string",
+          "required": true,
+          "description": "订单号"
+        }
+      ]
+    },
+    {
+      "id": "confirm_receipt",
+      "name": "确认收货",
+      "keywords": ["确认收货", "收货", "确认订单"],
+      "action": "OrderController.confirmReceipt(orderNo)",
+      "dependencies": ["view_order_detail"],
+      "description": "确认已收到商品",
+      "params": [
+        {
+          "name": "orderNo",
+          "type": "string",
+          "required": true,
+          "description": "订单号"
+        }
+      ]
+    },
+    {
+      "id": "view_address_list",
+      "name": "查看地址列表",
+      "keywords": ["地址列表", "收货地址", "我的地址"],
+      "action": "Get.toNamed(Routes.ADDRESS_LIST)",
+      "dependencies": [],
+      "description": "查看所有收货地址",
+      "params": []
+    },
+    {
+      "id": "add_address",
+      "name": "添加地址",
+      "keywords": ["新增地址", "添加地址", "新建地址"],
+      "action": "Get.toNamed(Routes.ADDRESS_EDIT)",
+      "dependencies": [],
+      "description": "添加新的收货地址",
+      "params": []
+    },
+    {
+      "id": "edit_address",
+      "name": "编辑地址",
+      "keywords": ["修改地址", "编辑地址", "更新地址"],
+      "action": "Get.toNamed(Routes.ADDRESS_EDIT, arguments: {'addressId': addressId})",
+      "dependencies": ["view_address_list"],
+      "description": "编辑已有的收货地址",
+      "params": [
+        {
+          "name": "addressId",
+          "type": "integer",
+          "required": true,
+          "description": "地址ID"
+        }
+      ]
+    },
+    {
+      "id": "delete_address",
+      "name": "删除地址",
+      "keywords": ["删除地址", "移除地址"],
+      "action": "AddressController.deleteAddress(addressId)",
+      "dependencies": ["view_address_list"],
+      "description": "删除收货地址",
+      "params": [
+        {
+          "name": "addressId",
+          "type": "integer",
+          "required": true,
+          "description": "地址ID"
+        }
+      ]
+    },
+    {
+      "id": "select_address",
+      "name": "选择收货地址",
+      "keywords": ["选择地址", "选地址", "设置收货地址"],
+      "action": "Get.toNamed(Routes.ADDRESS_LIST, arguments: {'selectMode': true})",
+      "dependencies": ["view_address_list"],
+      "description": "选择收货地址用于下单",
+      "params": []
+    },
+    {
+      "id": "login",
+      "name": "用户登录",
+      "keywords": ["登录", "登陆", "用户登录", "账号登录"],
+      "action": "Get.toNamed(Routes.LOGIN)",
+      "dependencies": [],
+      "description": "用户登录账号",
+      "params": [
+        {
+          "name": "phone",
+          "type": "string",
+          "required": true,
+          "description": "手机号"
+        },
+        {
+          "name": "password",
+          "type": "string",
+          "required": true,
+          "description": "密码"
+        }
+      ]
+    },
+    {
+      "id": "register",
+      "name": "用户注册",
+      "keywords": ["注册", "注册账号", "新用户注册"],
+      "action": "Get.toNamed(Routes.REGISTER)",
+      "dependencies": [],
+      "description": "注册新用户账号",
+      "params": [
+        {
+          "name": "phone",
+          "type": "string",
+          "required": true,
+          "description": "手机号"
+        },
+        {
+          "name": "password",
+          "type": "string",
+          "required": true,
+          "description": "密码"
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "required": true,
+          "description": "用户名"
+        }
+      ]
+    },
+    {
+      "id": "logout",
+      "name": "退出登录",
+      "keywords": ["退出", "登出", "退出登录", "注销"],
+      "action": "AuthController.logout()",
+      "dependencies": ["login"],
+      "description": "退出当前登录账号",
+      "params": []
+    },
+    {
+      "id": "view_profile",
+      "name": "查看个人信息",
+      "keywords": ["个人信息", "我的信息", "个人资料"],
+      "action": "Get.toNamed(Routes.USER_INFO)",
+      "dependencies": ["login"],
+      "description": "查看个人资料信息",
+      "params": []
+    },
+    {
+      "id": "edit_profile",
+      "name": "编辑个人信息",
+      "keywords": ["修改信息", "编辑资料", "更新个人信息"],
+      "action": "Get.toNamed(Routes.USER_INFO, arguments: {'edit': true})",
+      "dependencies": ["view_profile"],
+      "description": "编辑个人资料信息",
+      "params": []
+    }
+  ]
+} 
