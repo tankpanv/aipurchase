@@ -35,6 +35,8 @@ dependencies:
   # 降级到旧版本的shared_preferences
   shared_preferences: ^2.0.0
   flutter_screenutil: ^5.9.0
+  flutter_markdown: ^0.6.18
+  url_launcher: ^6.2.4
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.

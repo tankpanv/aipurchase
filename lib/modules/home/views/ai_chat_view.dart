@@ -5,6 +5,7 @@ import '../../../constants/app_colors.dart';
 import '../../../controllers/ai_chat_controller.dart';
 import 'agent_list_view.dart';
 import 'command_list_view.dart';
+import 'chat_markdown_view.dart';
 import '../../../utils/command_executor.dart';
 import 'dart:convert';
 import '../../../widgets/ai_product_card.dart';
@@ -33,6 +34,11 @@ class AIChatView extends GetView<AIChatController> {
             icon: Icon(Icons.psychology, size: 24.r),
             onPressed: _showAgentList,
             tooltip: '智能体列表',
+          ),
+          IconButton(
+            icon: Icon(Icons.format_list_bulleted, size: 24.r),
+            onPressed: () => Get.to(() => const ChatMarkdownView()),
+            tooltip: 'Markdown视图',
           ),
           IconButton(
             icon: Icon(Icons.history, size: 24.r),

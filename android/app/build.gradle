@@ -25,12 +25,16 @@ if (flutterVersionName == null) {
 
 android {
     namespace = "com.example.aipurchase"
-    compileSdk = 34
-    ndkVersion = "23.1.7779620"
+    compileSdk = 35
+    ndkVersion = "25.1.8937393"
 
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_11
         targetCompatibility JavaVersion.VERSION_11
+    }
+
+    kotlinOptions {
+        jvmTarget = '11'
     }
 
     defaultConfig {
@@ -39,17 +43,10 @@ android {
         // You can update the following values to match your application needs.
         // For more information, see: https://docs.flutter.dev/deployment/android#reviewing-the-gradle-build-configuration.
         minSdk = flutter.minSdkVersion
-        targetSdk = 34
+        targetSdk = 35
         versionCode = flutterVersionCode.toInteger()
         versionName = flutterVersionName
         multiDexEnabled true
-        
-        // 禁用CMake构建
-        externalNativeBuild {
-            cmake {
-                arguments "-DANDROID_STL=c++_shared"
-            }
-        }
     }
 
     buildTypes {
@@ -57,14 +54,6 @@ android {
             // TODO: Add your own signing config for the release build.
             // Signing with the debug keys for now, so `flutter run --release` works.
             signingConfig signingConfigs.debug
-        }
-    }
-    
-    // 移除CMake配置
-    externalNativeBuild {
-        cmake {
-            // 将path注释掉以禁用CMake
-            // path "CMakeLists.txt"
         }
     }
 }

@@ -1,0 +1,2 @@
+/Users/pantan/AndroidStudioProjects/aipurchase/android/app/.cxx/RelWithDebInfo/3p3d6h73/x86_64/CMakeFiles/edit_cache.dir
+/Users/pantan/AndroidStudioProjects/aipurchase/android/app/.cxx/RelWithDebInfo/3p3d6h73/x86_64/CMakeFiles/rebuild_cache.dir

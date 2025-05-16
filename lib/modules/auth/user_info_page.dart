@@ -78,7 +78,7 @@ class UserInfoPage extends StatelessWidget {
                           image: controller.currentUser.value?.avatar != null
                               ? DecorationImage(
                                   image: NetworkImage(
-                                    'https://aipurchase_server.huanfangsk.com/${controller.currentUser.value!.avatar!}',
+                                    'https://sqdftauejboz.sealoshzh.site/${controller.currentUser.value!.avatar!}',
                                   ),
                                   fit: BoxFit.cover,
                                 )

@@ -1,2 +1,0 @@
-/Users/pantan/AndroidStudioProjects/aipurchase/android/app/.cxx/Debug/1q188155/arm64-v8a/CMakeFiles/rebuild_cache.dir
-/Users/pantan/AndroidStudioProjects/aipurchase/android/app/.cxx/Debug/1q188155/arm64-v8a/CMakeFiles/edit_cache.dir

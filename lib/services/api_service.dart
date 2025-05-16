@@ -13,8 +13,8 @@ import 'package:dio/io.dart';
 class ApiService extends GetxService {
   late final Dio _dio;
   final String baseUrl = kDebugMode 
-    ? 'https://aipurchase_server.huanfangsk.com' 
-    : 'https://aipurchase_server.huanfangsk.com';  // 生产环境使用HTTPS
+    ? 'https://sqdftauejboz.sealoshzh.site' 
+    : 'https://sqdftauejboz.sealoshzh.site';  // 生产环境使用HTTPS
 
   @override
   void onInit() {
@@ -334,6 +334,7 @@ class ApiService extends GetxService {
 
   Future<Map<String, dynamic>> chatWithAI({
     required List<Map<String, String>> messages,
+    required String agentId,
     double temperature = 0.7,
     int maxTokens = 800,
     String? agentName,
@@ -359,7 +360,8 @@ class ApiService extends GetxService {
           'stream': false,
           'user_token': token,
           'user_id': userId.toString(),
-          'provider': 'dify'
+          'provider': 'dify',
+          'agent_id': agentId
       };
       
       // 添加智能体信息（如果有）

@@ -1,0 +1,20 @@
+{
+  "buildFiles": [
+    "/Users/pantan/Development/programs/flutter/packages/flutter_tools/gradle/src/main/groovy/CMakeLists.txt"
+  ],
+  "cleanCommandsComponents": [
+    [
+      "/Users/pantan/Library/Android/sdk/cmake/3.22.1/bin/ninja",
+      "-C",
+      "/Users/pantan/AndroidStudioProjects/aipurchase/android/app/.cxx/RelWithDebInfo/3p3d6h73/armeabi-v7a",
+      "clean"
+    ]
+  ],
+  "buildTargetsCommandComponents": [
+    "/Users/pantan/Library/Android/sdk/cmake/3.22.1/bin/ninja",
+    "-C",
+    "/Users/pantan/AndroidStudioProjects/aipurchase/android/app/.cxx/RelWithDebInfo/3p3d6h73/armeabi-v7a",
+    "{LIST_OF_TARGETS_TO_BUILD}"
+  ],
+  "libraries": {}
+}

@@ -28,11 +28,11 @@ class _MainViewState extends State<MainView> {
     AiTravelBinding().dependencies();
     
     pages = [
-      HomeView(),
-      const CartView(),
+    HomeView(),
+    const CartView(),
       const AiAssistantTravelView(),
-      const ProfileView(),
-    ];
+    const ProfileView(),
+  ];
   }
 
   @override

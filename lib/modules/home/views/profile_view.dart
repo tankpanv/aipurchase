@@ -58,7 +58,7 @@ class ProfileView extends GetView<AuthController> {
               ? CircleAvatar(
                   radius: 40.r,
                   backgroundImage: NetworkImage(
-                    'https://aipurchase_server.huanfangsk.com/${controller.currentUser.value!.avatar!}',
+                    'https://sqdftauejboz.sealoshzh.site/${controller.currentUser.value!.avatar!}',
                   ),
                 )
               : CircleAvatar(

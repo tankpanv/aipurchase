@@ -141,6 +141,7 @@ class AIChatController extends GetxController {
         // 打印最终的对话历史，便于调试
         debugPrint('发送对话历史: $chatHistory');
         final response = await _apiService.chatWithAI(
+          agentId: agent.id,
           messages: chatHistory,
           agentName: agent.name,
           agentPrompt: agent.prompt,

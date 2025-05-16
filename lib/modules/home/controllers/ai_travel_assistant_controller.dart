@@ -1,10 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../../../services/api_service.dart';
+import '../../../models/agent_model.dart';
 
 class AiTravelAssistantController extends GetxController {
   final TextEditingController textController = TextEditingController();
   final RxList<Map<String, dynamic>> messages = <Map<String, dynamic>>[].obs;
   final RxBool isExecuting = false.obs;
+  final RxBool isAiResponding = false.obs;
+  
+  final ApiService _apiService = Get.find<ApiService>();
+  final Rx<ScrollController> scrollController = ScrollController().obs;
 
   @override
   void onInit() {
@@ -19,11 +25,12 @@ class AiTravelAssistantController extends GetxController {
   @override
   void onClose() {
     textController.dispose();
+    scrollController.value.dispose();
     super.onClose();
   }
 
-  void handleUserInput(String text) {
-    if (text.isEmpty) return;
+  Future<void> handleUserInput(String text) async {
+    if (text.isEmpty || isAiResponding.value) return;
     
     // 添加用户消息
     addUserMessage(text);
@@ -31,15 +38,82 @@ class AiTravelAssistantController extends GetxController {
     // 清空输入框
     textController.clear();
     
-    // 模拟处理请求
+    // 滚动到底部
+    _scrollToBottom();
+    
+    // 设置AI正在响应
+    isAiResponding.value = true;
     isExecuting.value = true;
     
-    // 模拟延迟响应
-    Future.delayed(const Duration(seconds: 1), () {
-      final response = _generateResponse(text);
-      addBotMessage(response);
+    try {
+      // 添加"正在思考中..."的消息
+      addBotMessage('正在思考中...');
+      
+      // 构建对话历史
+      final chatHistory = <Map<String, String>>[];
+      
+      // 添加系统提示词
+      chatHistory.add({
+        'role': 'system',
+        'content': '你是一个专业的出行规划助手，可以帮助用户规划旅行、提供交通建议、推荐景点和住宿等。请提供详细、有用的建议，包括时间、价格和实用信息。'
+      });
+      
+      // 添加对话历史，但过滤掉"正在思考中..."的消息
+      final filteredMessages = messages
+          .where((msg) => msg['content'] != '正在思考中...')
+          .toList();
+
+      // 遍历消息，构建对话历史
+      for (int i = 0; i < filteredMessages.length; i++) {
+        final msg = filteredMessages[i];
+        
+        if (msg['isUser'] as bool) {
+          chatHistory.add({
+            'role': 'user',
+            'content': msg['content'].toString()
+          });
+        } else {
+          // AI消息
+          chatHistory.add({
+            'role': 'assistant',
+            'content': msg['content'].toString()
+          });
+        }
+      }
+
+      // 打印最终的对话历史，便于调试
+      debugPrint('发送对话历史: $chatHistory');
+      
+      final response = await _apiService.chatWithAI(
+        agentId: 'travel_assistant',
+        messages: chatHistory,
+        agentName: '出行规划助手',
+        agentPrompt: '你是一个专业的出行规划助手，可以帮助用户规划旅行、提供交通建议、推荐景点和住宿等。请提供详细、有用的建议，包括时间、价格和实用信息。',
+      );
+
+      // 移除"正在思考中..."的消息
+      messages.removeLast();
+
+      if (response['error'] == true) {
+        addBotMessage('抱歉，我暂时无法回答您的问题。请稍后再试。');
+      } else {
+        final aiResponse = response['choices'][0]['message']['content'] as String;
+        addBotMessage(aiResponse);
+      }
+    } catch (e) {
+      // 移除"正在思考中..."的消息（如果存在）
+      if (messages.isNotEmpty && messages.last['content'] == '正在思考中...') {
+        messages.removeLast();
+      }
+      addBotMessage('抱歉，出现了一些问题，无法完成您的请求。错误信息: $e');
+      debugPrint('AI对话错误: $e');
+    } finally {
+      isAiResponding.value = false;
       isExecuting.value = false;
-    });
+      
+      // 再次滚动到底部，确保看到最新消息
+      _scrollToBottom();
+    }
   }
   
   void addUserMessage(String content) {
@@ -58,27 +132,16 @@ class AiTravelAssistantController extends GetxController {
     });
   }
   
-  String _generateResponse(String userInput) {
-    // 简单的模拟响应逻辑
-    if (userInput.contains('北京') && userInput.contains('三日游')) {
-      return '北京三日游行程推荐：\n'
-          '第一天：天安门广场 → 故宫 → 景山公园 → 北海公园\n'
-          '第二天：八达岭长城 → 奥林匹克公园\n'
-          '第三天：颐和园 → 圆明园 → 798艺术区';
-    } else if (userInput.contains('上海') && userInput.contains('杭州')) {
-      return '从上海到杭州的交通方式：\n'
-          '1. 高铁：上海虹桥站到杭州东站，约1小时，票价约80元\n'
-          '2. 汽车：上海长途客运总站到杭州汽车东站，约2.5小时，票价约70元\n'
-          '3. 自驾：沪杭高速，约2小时，过路费约100元';
-    } else if (userInput.contains('春季') && userInput.contains('旅游')) {
-      return '春季旅游推荐城市：\n'
-          '1. 苏州：园林赏花，太湖风光\n'
-          '2. 武汉：樱花盛开的季节\n'
-          '3. 杭州：西湖春景，龙井茶园\n'
-          '4. 厦门：鼓浪屿，温暖宜人的气候';
-    } else {
-      return '您好，我是出行规划助手。我可以帮您规划行程，推荐景点，查询交通方式等。请具体描述您的出行需求，我会为您提供更精准的建议。';
-    }
+  void _scrollToBottom() {
+    Future.delayed(const Duration(milliseconds: 100), () {
+      if (scrollController.value.hasClients) {
+        scrollController.value.animateTo(
+          scrollController.value.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
+      }
+    });
   }
   
   void startVoiceInput() {
@@ -87,6 +150,7 @@ class AiTravelAssistantController extends GetxController {
   }
   
   void stopExecution() {
+    isAiResponding.value = false;
     isExecuting.value = false;
     Get.snackbar('提示', '已停止执行');
   }
