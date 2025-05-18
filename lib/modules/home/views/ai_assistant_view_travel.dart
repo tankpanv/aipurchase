@@ -375,10 +375,10 @@ class AiAssistantTravelView extends GetView<AiTravelAssistantController> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                _buildFeatureButton(Icons.directions_car, '自驾游'),
-                _buildFeatureButton(Icons.train, '火车票'),
-                _buildFeatureButton(Icons.directions_bus, '汽车票'),
-                _buildFeatureButton(Icons.hotel, '酒店'),
+                _buildFeatureButton(Icons.directions_car, '路径规划'),
+                _buildFeatureButton(Icons.train, '旅行规划'),
+                _buildFeatureButton(Icons.directions_bus, '天气查询'),
+                _buildFeatureButton(Icons.hotel, '酒店推荐'),
               ],
             ),
      

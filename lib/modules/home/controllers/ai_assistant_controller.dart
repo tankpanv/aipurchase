@@ -12,7 +12,7 @@ class AiAssistantController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    addMessage('AI助手', '您好！我是您的智能购物助手，请问有什么可以帮您的？', false);
+    addMessage('AI助手', '您好！我是您的生活服务助手，请问有什么可以帮您的？', false);
     
   }
   

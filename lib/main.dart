@@ -46,7 +46,7 @@ class MyApp extends StatelessWidget {
       builder: (context, child) {
         return GetMaterialApp(
           debugShowCheckedModeBanner: false,
-          title: '智能购物',
+          title: '生活服务',
           theme: ThemeData(
             scaffoldBackgroundColor: AppColors.background,
             colorScheme: ColorScheme.fromSeed(seedColor: AppColors.primary),
