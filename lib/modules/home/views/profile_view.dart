@@ -58,7 +58,7 @@ class ProfileView extends GetView<AuthController> {
               ? CircleAvatar(
                   radius: 40.r,
                   backgroundImage: NetworkImage(
-                    'https://sqdftauejboz.sealoshzh.site/${controller.currentUser.value!.avatar!}',
+                    _getAvatarUrl(controller.currentUser.value!.avatar!),
                   ),
                 )
               : CircleAvatar(
@@ -344,5 +344,11 @@ class ProfileView extends GetView<AuthController> {
         ],
       ),
     );
+  }
+
+  String _getAvatarUrl(String avatar) {
+    // 直接返回原始URL，不进行任何处理
+    debugPrint('ProfileView - 使用原始头像URL: $avatar');
+    return avatar;
   }
 } 

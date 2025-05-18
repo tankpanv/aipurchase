@@ -15,7 +15,7 @@ class ChatMarkdownView extends GetView<AIChatController> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'Markdown对话',
+          '人工智能对话',
           style: TextStyle(
             color: AppColors.textPrimary,
             fontSize: 18.sp,

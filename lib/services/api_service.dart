@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:developer' as developer;
 import 'package:flutter/foundation.dart';
-import 'package:get/get.dart' hide Response;
+import 'package:get/get.dart' hide Response, FormData, MultipartFile;
 import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/user_model.dart';
@@ -276,24 +276,45 @@ class ApiService extends GetxService {
     required String phone,
     String? email,
     String? address,
+    String? bio,
+    List<String>? tags,
+    List<String>? interests,
   }) async {
     try {
-      final response = await _dio.post('/api/app/user/update', data: {
+      final requestData = {
         'name': name,
         'phone': phone,
         if (email != null) 'email': email,
         if (address != null) 'address': address,
-      });
+        if (bio != null) 'bio': bio,
+        if (tags != null) 'tags': tags,
+        if (interests != null) 'interests': interests,
+      };
+      
+      debugPrint('准备发送更新用户信息请求:');
+      debugPrint('请求地址: /api/app/user/update');
+      debugPrint('请求数据: $requestData');
+      
+      final response = await _dio.post('/api/app/user/update', data: requestData);
+      
+      debugPrint('更新用户信息响应: ${response.statusCode}');
+      debugPrint('响应数据: ${response.data}');
       
       return ApiResponse.fromJson(
         response.data,
         (json) => json as Map<String, dynamic>,
       );
     } on DioException catch (e) {
+      debugPrint('更新用户信息异常: ${e.type} ${e.message}');
+      debugPrint('错误响应: ${e.response?.statusCode} ${e.response?.data}');
+      
       return ApiResponse(
         code: e.response?.statusCode ?? 500,
-        message: e.response?.statusMessage ?? '网络请求失败',
+        message: e.response?.data?['message'] ?? e.response?.statusMessage ?? '网络请求失败',
       );
+    } catch (e) {
+      debugPrint('更新用户信息未知异常: $e');
+      return ApiResponse(code: 500, message: '未知错误: $e');
     }
   }
 
@@ -339,6 +360,7 @@ class ApiService extends GetxService {
     int maxTokens = 800,
     String? agentName,
     String? agentPrompt,
+    bool? stream = false,
   }) async {
     try {
       debugPrint('发送AI聊天请求');
@@ -357,10 +379,11 @@ class ApiService extends GetxService {
       final requestData = {
           'model': 'dify-workflow',
           'messages': messages,
-          'stream': false,
+    
           'user_token': token,
           'user_id': userId.toString(),
           'provider': 'dify',
+          'stream': stream ?? false,
           'agent_id': agentId
       };
       
@@ -401,6 +424,264 @@ class ApiService extends GetxService {
         'error': true,
         'message': '发生未知错误: $e'
       };
+    }
+  }
+  
+  // 新增的流式请求方法
+  Future<void> sendWorkflowRequest({
+        required String agentId,
+    required String agentName,
+    required String agentPrompt,
+    required String prompt,
+    required String userId,
+    required List<Map<String, String>> chatHistory,
+    required String conversationId,
+    required Function(String event, Map<String, dynamic> data) onEvent,
+    required Function(String error) onError,
+    required Function() onDone,
+    List<Map<String, dynamic>>? files,
+  }) async {
+    try {
+      debugPrint('发送流式工作流请求');
+      
+      final token = await Storage.getToken();
+      if (token == null) {
+        onError('请先登录');
+        return;
+      }
+      print('agentId: $agentId');
+      print('agentName: $agentName');
+      print('agentPrompt: $agentPrompt');
+      print('prompt: $prompt');
+      print('userId: $userId');
+      print('chatHistory: $chatHistory');
+      print('conversationId: $conversationId');
+      // 构建请求数据
+      final requestData = {
+        'inputs': {
+          'query': prompt,
+          'user_token': token,
+          'user_id': userId,
+          'chat_history_message': chatHistory.isNotEmpty 
+              ? jsonEncode(chatHistory) 
+              : 'system: 你是一个有帮助的AI助手\n',
+        },
+        'agent_id': agentId,
+        'agent_name': agentName,
+        'agent_prompt': agentPrompt,
+        'user': userId,
+        'conversation_id': conversationId,
+      };
+      
+      // 如果有文件，添加到请求中
+      if (files != null && files.isNotEmpty) {
+        requestData['files'] = files;
+      }
+      
+      debugPrint('工作流请求数据: $requestData');
+      
+      // 创建Dio实例但不设置baseUrl，因为SSE连接方式不同
+      final dio = Dio(
+        BaseOptions(
+          headers: {
+            'Authorization': 'Bearer $token',
+            'Content-Type': 'application/json',
+          },
+          responseType: ResponseType.stream,
+          sendTimeout: const Duration(seconds: 600),
+          receiveTimeout: const Duration(seconds: 600),
+        ),
+      );
+      
+      final response = await dio.post(
+        '$baseUrl/chat/v1/workflows/run',
+        data: requestData,
+      );
+      
+      debugPrint('工作流响应状态: ${response.statusCode}');
+
+      if (response.statusCode == 200) {
+        final stream = response.data.stream as Stream<List<int>>;
+        
+        // 处理SSE流
+        String buffer = '';
+        bool workflowFinished = false;
+        
+        await for (final chunk in stream) {
+          final String text = utf8.decode(chunk);
+          buffer += text;
+          
+          // SSE格式为"data: {json数据}\n\n"
+          final lines = buffer.split('\n\n');
+          if (lines.length > 1) {
+            for (int i = 0; i < lines.length - 1; i++) {
+              final line = lines[i].trim();
+              if (line.startsWith('data: ')) {
+                final jsonStr = line.substring(6);
+                try {
+                  final data = jsonDecode(jsonStr) as Map<String, dynamic>;
+                  final event = data['event'] as String?;
+                  
+                  if (event != null) {
+                    final eventData = data['data'] as Map<String, dynamic>;
+                    onEvent(event, eventData);
+                    
+                    // 检查是否是工作流结束事件
+                    if (event == 'workflow_finished') {
+                      debugPrint('工作流执行完成: ${eventData['outputs']}');
+                      workflowFinished = true;
+                      
+                      // 调用完成回调，确保UI即时更新
+                      Future.delayed(const Duration(milliseconds: 100), () {
+                        onDone();
+                      });
+                      
+                      break;
+                    }
+                  }
+                } catch (e) {
+                  debugPrint('解析SSE数据失败: $e, 数据: $jsonStr');
+                }
+              }
+            }
+            buffer = lines.last;
+            
+            // 如果工作流已完成，跳出循环
+            if (workflowFinished) {
+              break;
+            }
+          }
+        }
+        
+        // 如果工作流没有显式完成但流结束了，也调用完成回调
+        if (!workflowFinished) {
+          onDone();
+        }
+      } else {
+        onError('请求失败，状态码: ${response.statusCode}');
+      }
+    } on DioException catch (e) {
+      debugPrint('工作流请求异常: ${e.type} ${e.message}');
+      onError(e.response?.data?['message'] ?? '请求失败，请稍后再试');
+    } catch (e) {
+      debugPrint('工作流请求未知异常: $e');
+      onError('发生未知错误: $e');
+    }
+  }
+
+  // 用于测试的模拟流式请求，当实际接口不可用时可使用
+  Future<void> sendMockWorkflowRequest({
+    required String agentId,
+    required String agentName,
+    required String agentPrompt,
+    required String prompt,
+    required String userId,
+    required List<Map<String, String>> chatHistory,
+    required String conversationId,
+    required Function(String event, Map<String, dynamic> data) onEvent,
+    required Function(String error) onError,
+    required Function() onDone,
+  }) async {
+    try {
+      // 模拟启动工作流
+      onEvent('workflow_started', {
+        'id': 'mock-${DateTime.now().millisecondsSinceEpoch}',
+        'workflow_id': 'mock-workflow',
+        'sequence_number': 1,
+        'created_at': DateTime.now().millisecondsSinceEpoch ~/ 1000,
+      });
+      
+      await Future.delayed(const Duration(milliseconds: 500));
+      
+      // 模拟节点开始
+      onEvent('node_started', {
+        'id': 'mock-node-${DateTime.now().millisecondsSinceEpoch}',
+        'node_id': 'mock-node',
+        'node_type': 'llm',
+        'title': '回复生成',
+        'index': 0,
+        'predecessor_node_id': null,
+        'inputs': {'query': prompt},
+        'created_at': DateTime.now().millisecondsSinceEpoch ~/ 1000,
+      });
+      
+      await Future.delayed(const Duration(milliseconds: 300));
+      
+      // 生成回复文本
+      final String response = '我收到了您的问题: "$prompt"。这是一个很好的问题，让我来回答：';
+      final words = response.split(' ');
+      
+      // 模拟文本流
+      for (var word in words) {
+        await Future.delayed(const Duration(milliseconds: 100));
+        onEvent('text_chunk', {
+          'text': '$word ',
+          'from_variable_selector': ['mock', 'text'],
+        });
+      }
+      
+      // 根据prompt提供不同的回复
+      if (prompt.contains('旅行') || prompt.contains('出行')) {
+        final locations = ['北京', '上海', '广州', '深圳', '杭州', '成都', '重庆', '西安'];
+        
+        for (var location in locations) {
+          await Future.delayed(const Duration(milliseconds: 150));
+          onEvent('text_chunk', {
+            'text': '\n$location是个不错的选择，',
+            'from_variable_selector': ['mock', 'text'],
+          });
+          
+          await Future.delayed(const Duration(milliseconds: 150));
+          onEvent('text_chunk', {
+            'text': '那里有很多著名景点和美食。',
+            'from_variable_selector': ['mock', 'text'],
+          });
+        }
+      } else {
+        // 通用回复
+        await Future.delayed(const Duration(milliseconds: 300));
+        onEvent('text_chunk', {
+          'text': '\n\n希望这个回答对您有所帮助！如果您有更多问题，请随时提出。',
+          'from_variable_selector': ['mock', 'text'],
+        });
+      }
+      
+      await Future.delayed(const Duration(milliseconds: 500));
+      
+      // 节点完成
+      onEvent('node_finished', {
+        'id': 'mock-node-${DateTime.now().millisecondsSinceEpoch}',
+        'node_id': 'mock-node',
+        'status': 'succeeded',
+        'outputs': {'summary': '这是一个关于${prompt.contains('旅行') ? '旅行建议' : '一般问题'}的回答'},
+        'elapsed_time': 2.5,
+        'execution_metadata': {
+          'total_tokens': 150,
+          'total_price': 0.001,
+          'currency': 'USD',
+        },
+        'created_at': DateTime.now().millisecondsSinceEpoch ~/ 1000,
+      });
+      
+      await Future.delayed(const Duration(milliseconds: 300));
+      
+      // 工作流完成
+      onEvent('workflow_finished', {
+        'id': 'mock-${DateTime.now().millisecondsSinceEpoch}',
+        'workflow_id': 'mock-workflow',
+        'status': 'succeeded',
+        'outputs': {'summary': '这是一个关于${prompt.contains('旅行') ? '旅行建议' : '一般问题'}的回答'},
+        'elapsed_time': 3.0,
+        'total_tokens': 150,
+        'total_steps': 1,
+        'created_at': DateTime.now().millisecondsSinceEpoch ~/ 1000,
+        'finished_at': DateTime.now().millisecondsSinceEpoch ~/ 1000,
+      });
+      
+      onDone();
+    } catch (e) {
+      debugPrint('模拟流式请求异常: $e');
+      onError('模拟请求失败: $e');
     }
   }
 
@@ -473,6 +754,117 @@ class ApiService extends GetxService {
         pages: 0,
         currentPage: page,
       );
+    }
+  }
+
+  // 上传图片
+  Future<ApiResponse<List<String>>> uploadImages(List<String> imagePaths) async {
+    try {
+      final token = await Storage.getToken();
+      if (token == null) {
+        return ApiResponse(code: 401, message: '请先登录');
+      }
+      
+      debugPrint('准备上传图片: $imagePaths');
+      final formData = FormData();
+      
+      for (var path in imagePaths) {
+        final fileName = path.split('/').last;
+        debugPrint('添加文件: $fileName 路径: $path');
+        formData.files.add(
+          MapEntry(
+            'images',
+            await MultipartFile.fromFile(path, filename: fileName),
+          ),
+        );
+      }
+      
+      debugPrint('发送图片上传请求...');
+      final response = await _dio.post(
+        '/api/upload/image',
+        data: formData,
+        options: Options(
+          headers: {
+            'Authorization': 'Bearer $token',
+            'Content-Type': 'multipart/form-data',
+          },
+        ),
+      );
+      
+      debugPrint('图片上传响应: ${response.statusCode}');
+      debugPrint('图片上传响应数据: ${response.data}');
+      
+      if (response.statusCode == 200 && response.data['code'] == 200) {
+        List<String> imageUrls = [];
+        if (response.data['data'] is List) {
+          // 处理列表形式的URL
+          imageUrls = List<String>.from(response.data['data']);
+          debugPrint('服务器返回的URL列表: $imageUrls');
+        } else if (response.data['data'] is String) {
+          // 处理单个URL作为字符串返回的情况
+          imageUrls = [response.data['data']];
+          debugPrint('服务器返回的单个URL: ${response.data['data']}');
+        } else if (response.data['data'] is Map) {
+          // 处理某些情况下返回的可能是包含URL的对象
+          final dataMap = response.data['data'] as Map;
+          if (dataMap.containsKey('url')) {
+            imageUrls = [dataMap['url'].toString()];
+            debugPrint('从对象中提取的URL: ${dataMap['url']}');
+          }
+        }
+        
+        // 直接返回服务器提供的URL，不进行额外处理
+        debugPrint('上传成功，服务器返回的原始URLs: $imageUrls');
+        return ApiResponse(
+          code: 200,
+          message: response.data['message'] ?? '上传成功',
+          data: imageUrls,
+        );
+      }
+      
+      debugPrint('上传失败，响应: ${response.data}');
+      return ApiResponse(
+        code: response.data['code'] ?? 400,
+        message: response.data['message'] ?? '上传失败',
+      );
+    } on DioException catch (e) {
+      debugPrint('上传图片异常: ${e.type} ${e.message}');
+      debugPrint('上传图片错误详情: ${e.response?.statusCode} ${e.response?.data}');
+      return ApiResponse(
+        code: e.response?.statusCode ?? 500,
+        message: e.response?.data?['message'] ?? e.response?.statusMessage ?? '网络请求失败',
+      );
+    } catch (e) {
+      debugPrint('上传图片未知异常: $e');
+      return ApiResponse(code: 500, message: '未知错误: $e');
+    }
+  }
+
+  // 更新用户头像
+  Future<ApiResponse<Map<String, dynamic>>> updateUserAvatar(String avatarUrl) async {
+    try {
+      debugPrint('更新用户头像: $avatarUrl');
+      final response = await _dio.post('/api/app/user/update', data: {
+        'avatar_url': avatarUrl,
+      });
+      
+      debugPrint('更新头像响应: ${response.statusCode}');
+      debugPrint('更新头像响应数据: ${response.data}');
+      
+      return ApiResponse.fromJson(
+        response.data,
+        (json) => json as Map<String, dynamic>,
+      );
+    } on DioException catch (e) {
+      debugPrint('更新头像异常: ${e.type} ${e.message}');
+      debugPrint('更新头像错误详情: ${e.response?.statusCode} ${e.response?.data}');
+      return ApiResponse(
+        code: e.response?.statusCode ?? 500,
+        message: e.response?.data?['message'] ?? e.response?.statusMessage ?? '网络请求失败',
+      );
+    } catch (e) {
+      debugPrint('更新头像未知异常: $e');
+      return ApiResponse(code: 500, message: '未知错误: $e');
     }
   }
 

@@ -142,7 +142,7 @@ class RegisterPage extends StatelessWidget {
                               TextSpan(
                                 text: '服务条款',
                                 style: TextStyle(
-                                  color: AppColors.primary,
+                             
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
@@ -150,7 +150,7 @@ class RegisterPage extends StatelessWidget {
                               TextSpan(
                                 text: '隐私政策',
                                 style: TextStyle(
-                                  color: AppColors.primary,
+                              
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),

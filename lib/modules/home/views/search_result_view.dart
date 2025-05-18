@@ -22,7 +22,7 @@ class SearchResultView extends GetView<SearchResultController> {
             borderRadius: BorderRadius.circular(18.r),
           ),
           child: TextField(
-            controller: TextEditingController(text: controller.keyword),
+            controller: controller.searchController.value,
             decoration: InputDecoration(
               hintText: '搜索商品',
               hintStyle: TextStyle(
@@ -30,7 +30,7 @@ class SearchResultView extends GetView<SearchResultController> {
                 fontSize: 14.sp,
               ),
               prefixIcon: const Icon(Icons.search, color: AppColors.textHint),
-              suffixIcon: controller.keyword?.isNotEmpty == true
+              suffixIcon: Obx(() => controller.searchController.value.text.isNotEmpty
                 ? IconButton(
                     icon: const Icon(Icons.clear, color: AppColors.textHint),
                     onPressed: () {
@@ -38,7 +38,7 @@ class SearchResultView extends GetView<SearchResultController> {
                       controller.searchProducts(refresh: true);
                     },
                   )
-                : null,
+                : const SizedBox.shrink()),
               border: InputBorder.none,
               contentPadding: EdgeInsets.symmetric(vertical: 8.h),
             ),

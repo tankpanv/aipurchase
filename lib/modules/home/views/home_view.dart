@@ -91,32 +91,6 @@ class _HomeViewState extends State<HomeView> {
       padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
       child: Column(
         children: [
-          // 位置栏
-          Row(
-            children: [
-              Icon(Icons.location_on, size: 20.r, color: AppColors.textPrimary),
-              SizedBox(width: 4.w),
-              Obx(() => Text(
-                controller.location.value,
-                style: TextStyle(
-                  fontSize: 14.sp,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
-                ),
-              )),
-              SizedBox(width: 4.w),
-              Icon(Icons.keyboard_arrow_right, size: 16.r, color: AppColors.textPrimary),
-              const Spacer(),
-              IconButton(
-                icon: const Icon(Icons.fullscreen, color: AppColors.textPrimary),
-                onPressed: () {},
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(),
-              ),
-            ],
-          ),
-          SizedBox(height: 10.h),
-          
           // 搜索框
           Container(
             height: 40.h,

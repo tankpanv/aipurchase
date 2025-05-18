@@ -1,3 +1,4 @@
+import 'package:aipurchase/modules/home/home_page.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -7,7 +8,6 @@ import '../../../controllers/auth_controller.dart';
 import '../../../controllers/order_controller.dart';
 import '../../../models/cart_item.dart';
 import '../../../routes/app_pages.dart';
-import '../../main/main_view.dart';
 
 class CartView extends GetView<CartController> {
   const CartView({super.key});
@@ -107,7 +107,7 @@ class CartView extends GetView<CartController> {
                 SizedBox(height: 24.h),
                 ElevatedButton(
                   onPressed: () {
-                    Get.offAll(() => MainView());
+                    Get.offAll(() => HomePage());
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,

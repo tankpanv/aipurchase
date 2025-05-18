@@ -79,23 +79,16 @@ class LoginPage extends StatelessWidget {
                       SizedBox(height: 24.h),
                       
                       // 忘记密码
-                      Align(
-                        alignment: Alignment.centerRight,
-                        child: GestureDetector(
-                          onTap: () {
-                            // 处理忘记密码操作
-                          },
-                          child: Text(
-                            '忘记密码?',
-                            style: TextStyle(
-                              fontSize: 14.sp,
-                              color: AppColors.primary,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ),
-                      ),
-                      SizedBox(height: 40.h),
+                      // Align(
+                      //   alignment: Alignment.centerRight,
+                      //   child: GestureDetector(
+                      //     onTap: () {
+                      //       // 处理忘记密码操作
+                      //     },
+                       
+                      //   ),
+                      // ),
+                      // SizedBox(height: 40.h),
                       
                       // 登录按钮
                       ElevatedButton(

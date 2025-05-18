@@ -37,7 +37,7 @@ class AboutView extends GetView {
               SizedBox(height: 16.h),
               // App 名称
               Text(
-                '美团优选',
+                '智能导购',
                 style: TextStyle(
                   fontSize: 24.sp,
                   fontWeight: FontWeight.bold,
@@ -59,7 +59,7 @@ class AboutView extends GetView {
               SizedBox(height: 32.h),
               // 关于内容
               Text(
-                '美团优选是一款专注于为用户提供优质商品和服务的电商平台。我们致力于为用户带来便捷的购物体验，提供丰富多样的商品选择。',
+                '智能导购是一款专注于为用户提供优质商品和服务的电商平台。我们致力于为用户带来便捷的购物体验，提供丰富多样的商品选择。',
                 style: TextStyle(
                   fontSize: 16.sp,
                   color: AppColors.textPrimary,

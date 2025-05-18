@@ -25,14 +25,7 @@ class Agent {
         iconId: 'restaurant',
         tags: ['食品', '安全', '健康'],
       ),
-      Agent(
-        id: 'travel_assistant',
-        name: '出行助手',
-        description: '提供旅行路线规划、交通工具推荐等服务',
-        prompt: '你是一个出行助手，擅长规划旅行路线、推荐交通工具、提供景点信息等。请根据用户需求提供实用的出行建议和路线规划服务。',
-        iconId: 'map',
-        tags: ['旅行', '交通', '地图'],
-      ),
+
       Agent(
         id: 'shopping',
         name: '购物推荐',

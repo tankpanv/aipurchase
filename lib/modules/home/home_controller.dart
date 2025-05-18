@@ -6,7 +6,6 @@ import '../../models/product_model.dart';
 class HomeController extends GetxController {
   final ApiService _apiService = Get.find<ApiService>();
   
-  final RxString location = '康乐园公寓5号楼'.obs;
   final RxString searchText = ''.obs;
   
   // 记录加载状态
@@ -174,10 +173,6 @@ class HomeController extends GetxController {
       debugPrint('加载${menuItem['name']}商品失败: $e');
       return [];
     }
-  }
-  
-  void updateLocation(String newLocation) {
-    location.value = newLocation;
   }
   
   void updateSearchText(String text) {

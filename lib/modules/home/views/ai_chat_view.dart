@@ -35,17 +35,7 @@ class AIChatView extends GetView<AIChatController> {
             onPressed: _showAgentList,
             tooltip: '智能体列表',
           ),
-          IconButton(
-            icon: Icon(Icons.format_list_bulleted, size: 24.r),
-            onPressed: () => Get.to(() => const ChatMarkdownView()),
-            tooltip: 'Markdown视图',
-          ),
-          IconButton(
-            icon: Icon(Icons.history, size: 24.r),
-            onPressed: () {
-              // TODO: 显示历史对话记录
-            },
-          ),
+      
         ],
       ),
       body: Column(

@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../models/product_model.dart';
 import '../services/api_service.dart';
@@ -21,6 +22,9 @@ class SearchResultController extends GetxController {
   double? priceMax;
   String? sort;
   String? order;
+  
+  // 搜索框控制器
+  late Rx<TextEditingController> searchController;
 
   @override
   void onInit() {
@@ -35,8 +39,30 @@ class SearchResultController extends GetxController {
       sort = args['sort'] as String?;
       order = args['order'] as String?;
     }
+    
+    // 初始化搜索框控制器
+    searchController = TextEditingController(text: keyword).obs;
+    
+    // 为文本框添加监听器
+    searchController.value.addListener(_onSearchTextChanged);
+    
     // 初始加载数据
     searchProducts(refresh: true);
+  }
+  
+  // 文本变化监听器
+  void _onSearchTextChanged() {
+    // 当文本框文本变化时自动更新keyword
+    keyword = searchController.value.text;
+  }
+  
+  @override
+  void onClose() {
+    // 移除监听器
+    searchController.value.removeListener(_onSearchTextChanged);
+    // 释放控制器资源
+    searchController.value.dispose();
+    super.onClose();
   }
 
   // 刷新数据
@@ -124,5 +150,7 @@ class SearchResultController extends GetxController {
   // 更新搜索关键词
   void updateKeyword(String value) {
     keyword = value;
+    // 同步更新文本框内容
+    searchController.value.text = value;
   }
 } 
