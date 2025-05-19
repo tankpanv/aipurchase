@@ -868,13 +868,64 @@ class ApiService extends GetxService {
     }
   }
 
-  Exception _handleError(dynamic error) {
+  dynamic _handleError(dynamic error) {
     if (error is DioException) {
-      if (error.response?.data != null && error.response?.data['message'] != null) {
-        return Exception(error.response?.data['message']);
+      debugPrint('API错误(DioException): ${error.type} ${error.message}');
+      debugPrint('错误响应数据: ${error.response?.data}');
+      debugPrint('错误响应状态码: ${error.response?.statusCode}');
+      
+      // 显示详细错误信息而不是仅仅显示状态码
+      String errorMessage = '网络请求失败';
+      
+      // 如果有响应数据，尝试提取更具体的错误信息
+      if (error.response?.data != null) {
+        if (error.response!.data is Map) {
+          errorMessage = error.response!.data['message'] ?? errorMessage;
+        } else if (error.response!.data is String) {
+          errorMessage = error.response!.data;
+        }
       }
-      return Exception(error.message);
+      
+      // 根据状态码提供更具体的错误描述
+      if (error.response?.statusCode == 400) {
+        if (errorMessage == '网络请求失败') {
+          errorMessage = '请求参数错误，请检查输入数据';
+        }
+        throw DioException(
+          requestOptions: error.requestOptions,
+          error: 'Bad Request: $errorMessage',
+          response: error.response,
+          type: error.type,
+        );
+      } else if (error.response?.statusCode == 401) {
+        // 自动处理身份验证失败，清除token并跳转到登录页面
+        Storage.clearToken();
+        Get.offAllNamed('/login');
+        throw DioException(
+          requestOptions: error.requestOptions,
+          error: '登录已过期，请重新登录',
+          response: error.response,
+          type: error.type,
+        );
+      } else if (error.response?.statusCode == 404) {
+        throw DioException(
+          requestOptions: error.requestOptions,
+          error: '请求的资源不存在: $errorMessage',
+          response: error.response,
+          type: error.type,
+        );
+      } else if (error.response?.statusCode == 500) {
+        throw DioException(
+          requestOptions: error.requestOptions,
+          error: '服务器内部错误: $errorMessage',
+          response: error.response,
+          type: error.type,
+        );
+      }
+      
+      return error;
     }
-    return Exception('An unexpected error occurred');
+    debugPrint('API错误(其他类型): $error');
+    return error;
   }
 } 

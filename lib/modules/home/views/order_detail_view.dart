@@ -25,17 +25,25 @@ class OrderDetailView extends GetView<OrderController> {
             }
 
             if (snapshot.hasError) {
+              debugPrint('订单详情加载失败: ${snapshot.error}');
               return Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text('加载失败：${snapshot.error}'),
+                    SizedBox(height: 16.h),
                     ElevatedButton(
                       onPressed: () => controller.getOrderDetail(orderNo),
                       child: const Text('重试'),
                     ),
                   ],
                 ),
+              );
+            }
+
+            if (snapshot.data == null) {
+              return const Center(
+                child: Text('订单数据为空，请返回重试'),
               );
             }
 
@@ -46,13 +54,13 @@ class OrderDetailView extends GetView<OrderController> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   _buildStatusCard(order),
-                  SizedBox(height: 16.w),
+                  SizedBox(height: 16.h),
                   if (order.address != null) _buildAddressCard(order.address!),
-                  SizedBox(height: 16.w),
+                  SizedBox(height: 16.h),
                   _buildOrderItems(order.items),
-                  SizedBox(height: 16.w),
+                  SizedBox(height: 16.h),
                   _buildOrderInfo(order),
-                  SizedBox(height: 24.w),
+                  SizedBox(height: 24.h),
                   _buildActionButtons(order),
                 ],
               ),
@@ -181,22 +189,15 @@ class OrderDetailView extends GetView<OrderController> {
         children: [
           ClipRRect(
             borderRadius: BorderRadius.circular(4.w),
-            child: Image.network(
-              item.product.mainImageUrl,
-              width: 80.w,
-              height: 80.w,
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) => Container(
-                width: 80.w,
-                height: 80.w,
-                color: Colors.grey[200],
-                child: Icon(
-                  Icons.image_not_supported_outlined,
-                  size: 32.w,
-                  color: Colors.grey[400],
-                ),
-              ),
-            ),
+            child: item.product.mainImageUrl.isNotEmpty
+                ? Image.network(
+                    item.product.mainImageUrl,
+                    width: 80.w,
+                    height: 80.w,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) => _buildImageError(),
+                  )
+                : _buildImageError(),
           ),
           SizedBox(width: 12.w),
           Expanded(
@@ -212,7 +213,7 @@ class OrderDetailView extends GetView<OrderController> {
                     height: 1.2,
                   ),
                 ),
-                SizedBox(height: 8.w),
+                SizedBox(height: 8.h),
                 Text(
                   '¥${item.price}',
                   style: TextStyle(
@@ -221,7 +222,7 @@ class OrderDetailView extends GetView<OrderController> {
                     color: Theme.of(Get.context!).primaryColor,
                   ),
                 ),
-                SizedBox(height: 4.w),
+                SizedBox(height: 4.h),
                 Text(
                   '数量：${item.quantity}',
                   style: TextStyle(
@@ -233,6 +234,19 @@ class OrderDetailView extends GetView<OrderController> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildImageError() {
+    return Container(
+      width: 80.w,
+      height: 80.w,
+      color: Colors.grey[200],
+      child: Icon(
+        Icons.image_not_supported_outlined,
+        size: 32.w,
+        color: Colors.grey[400],
       ),
     );
   }

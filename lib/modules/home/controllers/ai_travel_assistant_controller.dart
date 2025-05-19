@@ -223,8 +223,15 @@ class AiTravelAssistantController extends GetxController {
       // 处理文本块
       final String text = data['text'] ?? '';
       
-      // 添加到当前流式响应中
-      currentStreamResponse.value += text;
+      // 检查是否包含特殊命令标记
+      if (text.contains('commands:') || text.contains('address_list:')) {
+        debugPrint('检测到可能的命令或地址列表: $text');
+        // 将命令文本作为普通文本处理，不尝试解析JSON
+        currentStreamResponse.value += text;
+      } else {
+        // 添加到当前流式响应中
+        currentStreamResponse.value += text;
+      }
       
       // 更新消息
       if (messages.length > messageIndex) {
@@ -245,6 +252,13 @@ class AiTravelAssistantController extends GetxController {
       if (data['outputs'] != null && data['outputs']['summary'] != null) {
         final String summary = data['outputs']['summary'];
         debugPrint('工作流输出摘要: $summary');
+      }
+      
+      // 尝试从最终文本中提取命令数据
+      if (currentStreamResponse.value.contains('commands:') || 
+          currentStreamResponse.value.contains('address_list:')) {
+        debugPrint('最终响应中包含命令数据，设置为原始文本形式');
+        // 不要尝试解析JSON，直接显示原文
       }
       
       // 确保立即更新UI状态
@@ -289,10 +303,45 @@ class AiTravelAssistantController extends GetxController {
       // 如果有特定节点的输出，可以在这里处理
       if (data['outputs'] != null) {
         debugPrint('节点输出: ${data['outputs']}');
+        
+        // 检查是否包含地址列表
+        if (data['outputs']['address_list'] != null) {
+          debugPrint('检测到地址列表输出');
+          // 处理地址列表数据
+          try {
+            final addressListData = data['outputs']['address_list'];
+            // 将地址列表数据作为单独消息添加
+            addBotMessage('以下是您的地址列表：\n\n${_formatAddressList(addressListData)}');
+          } catch (e) {
+            debugPrint('处理地址列表输出失败: $e');
+          }
+        }
       }
     } else if (event == 'workflow_started') {
       // 工作流开始
       debugPrint('工作流开始: ${data['id']}');
+    }
+  }
+  
+  // 格式化地址列表为易读文本
+  String _formatAddressList(dynamic addressListData) {
+    try {
+      if (addressListData is List) {
+        final buffer = StringBuffer();
+        for (int i = 0; i < addressListData.length; i++) {
+          final address = addressListData[i];
+          buffer.writeln('${i+1}. ${address['name'] ?? '未知'} - ${address['phone'] ?? '无电话'}');
+          buffer.writeln('   地址: ${address['province'] ?? ''}${address['city'] ?? ''}${address['district'] ?? ''}${address['detail'] ?? ''}');
+          buffer.writeln('');
+        }
+        return buffer.toString();
+      } else if (addressListData is String) {
+        return addressListData;
+      }
+      return '无法解析地址列表数据';
+    } catch (e) {
+      debugPrint('格式化地址列表失败: $e');
+      return '地址数据解析失败: $e';
     }
   }
   

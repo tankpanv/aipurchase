@@ -127,32 +127,45 @@ class AIChatView extends GetView<AIChatController> {
     List<Map<String, dynamic>>? products;
     List<Map<String, dynamic>>? addresses;
     List<Map<String, dynamic>>? orders;
+    String displayContent = content;
+    bool isJsonResponse = false;
     
     if (!isUser && !isThinking) {
       try {
-        aiResponse = json.decode(content);
-        if (aiResponse?['commands'] != null) {
-          final commands = List<Map<String, dynamic>>.from(aiResponse!['commands']);
-          debugPrint('commands: $commands');
-          for (final command in commands) {
-            if (command['found_products'] != null) {
-              products = List<Map<String, dynamic>>.from(command['found_products']);
-              break;
-            }
-            if (command['address_list'] != null) {
-              addresses = List<Map<String, dynamic>>.from(command['address_list']);
-              break;
-            }
-            if (command['order_list'] != null) {
-              orders = List<Map<String, dynamic>>.from(command['order_list']);
-              break;
-            }
+        // 检查内容是否以{开头和}结尾，这是JSON的特征
+        if (content.trim().startsWith('{') && content.trim().endsWith('}')) {
+          aiResponse = json.decode(content);
+          isJsonResponse = true;
           
+          // 提取显示内容
+          if (aiResponse?['content'] != null) {
+            displayContent = aiResponse!['content'].toString();
           }
+          
+          if (aiResponse?['commands'] != null) {
+            final commands = List<Map<String, dynamic>>.from(aiResponse!['commands']);
+            debugPrint('commands: $commands');
+            for (final command in commands) {
+              if (command['found_products'] != null) {
+                products = List<Map<String, dynamic>>.from(command['found_products']);
+              }
+              if (command['address_list'] != null) {
+                addresses = List<Map<String, dynamic>>.from(command['address_list']);
+              }
+              if (command['order_list'] != null) {
+                orders = List<Map<String, dynamic>>.from(command['order_list']);
+              }
+            }
+          }
+        } else if (content.contains('commands:') || content.contains('address_list:') || content.contains('order_list:')) {
+          // 可能是特殊格式的命令数据，记录日志但不尝试解析
+          debugPrint('检测到可能的命令或列表数据，作为普通文本处理: $content');
+          displayContent = content;
         }
       } catch (e) {
         // 解析失败，作为普通文本处理
-        print('解析AI返回内容失败: $e');
+        debugPrint('解析AI返回内容失败: $e');
+        displayContent = content;
       }
     }
 
@@ -206,10 +219,10 @@ class AIChatView extends GetView<AIChatController> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                if (!isUser && aiResponse != null)
-                  Text(aiResponse['content'] ?? content)
+                if (!isUser && isJsonResponse && aiResponse != null)
+                  Text(displayContent)
                 else
-                  Text(content),
+                  Text(displayContent),
                 if (products != null && products.isNotEmpty) ...[
                   const SizedBox(height: 16),
                   ...products.map((product) => AIProductCard(product: product)),
@@ -227,7 +240,7 @@ class AIChatView extends GetView<AIChatController> {
           ),
           const SizedBox(height: 4),
           Text(
-            '${time.hour}:${time.minute}',
+            '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}',
             style: const TextStyle(
               fontSize: 12,
               color: Colors.grey,
@@ -300,110 +313,264 @@ class AIChatView extends GetView<AIChatController> {
   }
 
   Widget _buildOrderCard(Map<String, dynamic> order) {
-    final items = List<Map<String, dynamic>>.from(order['items']);
-    final firstItem = items.first;
-    final status = _getOrderStatusText(order['status'] as String);
-    
-    return GestureDetector(
-      onTap: () => Get.toNamed(
-        Routes.ORDER_DETAIL, 
-        parameters: {'orderNo': order['order_no']}
-      ),
-      child: Container(
+    try {
+      // 安全获取字段值
+      final String orderNo = order['order_no']?.toString() ?? '未知订单号';
+      final String status = _getOrderStatusText(order['status']?.toString() ?? '');
+      final dynamic totalAmount = order['total_amount'] ?? 0;
+      
+      // 处理订单项
+      final List<Map<String, dynamic>> items = [];
+      if (order['items'] != null) {
+        try {
+          items.addAll(List<Map<String, dynamic>>.from(order['items']));
+        } catch (e) {
+          debugPrint('订单项解析失败: $e');
+        }
+      }
+          
+      // 如果items为空，显示基本订单信息
+      if (items.isEmpty) {
+        return Container(
+          margin: EdgeInsets.only(bottom: 8.h),
+          padding: EdgeInsets.all(12.r),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(8.r),
+            border: Border.all(color: Colors.grey[300]!),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Text(
+                    '订单号：$orderNo',
+                    style: TextStyle(
+                      fontSize: 14.sp,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                  const Spacer(),
+                  Text(
+                    status,
+                    style: TextStyle(
+                      fontSize: 14.sp,
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: 8.h),
+              Text(
+                '暂无商品数据',
+                style: TextStyle(
+                  fontSize: 14.sp,
+                  color: Colors.grey[600],
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+              SizedBox(height: 8.h),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  Text(
+                    '实付：',
+                    style: TextStyle(
+                      fontSize: 12.sp,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                  Text(
+                    '¥$totalAmount',
+                    style: TextStyle(
+                      fontSize: 16.sp,
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        );
+      }
+      
+      // 安全获取第一个商品信息
+      Map<String, dynamic> firstItem;
+      try {
+        firstItem = items.first;
+      } catch (e) {
+        debugPrint('获取第一个商品失败: $e');
+        firstItem = {};
+      }
+      
+      // 检查是否是新的数据结构(有product字段)
+      bool isNewStructure = firstItem.containsKey('product') && firstItem['product'] is Map;
+      bool isDeletedProduct = firstItem.containsKey('deleted_product') && firstItem['deleted_product'] is Map;
+      
+      // 获取商品信息
+      String productName = '未知商品';
+      String productImage = '';
+      dynamic price = 0;
+      dynamic quantity = 1;
+      
+      try {
+        if (isNewStructure) {
+          // 新数据结构，从product字段中获取信息
+          final product = firstItem['product'] as Map<String, dynamic>? ?? {};
+          productName = product['name']?.toString() ?? '未知商品';
+          productImage = product['main_image_url']?.toString() ?? '';
+          price = firstItem['price'] ?? product['price'] ?? 0;
+          quantity = firstItem['quantity'] ?? 1;
+        } else if (isDeletedProduct) {
+          // 已删除商品结构
+          final deletedProduct = firstItem['deleted_product'] as Map<String, dynamic>? ?? {};
+          productName = deletedProduct['product_name']?.toString() ?? '已删除商品';
+          productImage = '';
+          price = firstItem['price'] ?? deletedProduct['price'] ?? 0;
+          quantity = firstItem['quantity'] ?? 1;
+        } else {
+          // 旧数据结构，直接从item中获取
+          productName = firstItem['product_name']?.toString() ?? '未知商品';
+          productImage = firstItem['product_image']?.toString() ?? '';
+          price = firstItem['price'] ?? 0;
+          quantity = firstItem['quantity'] ?? 1;
+        }
+      } catch (e) {
+        debugPrint('解析商品信息失败: $e');
+        productName = '商品信息解析失败';
+      }
+      
+      debugPrint('订单: $orderNo, 状态: $status, 商品: $productName, 价格: $price, 数量: $quantity');
+      
+      return GestureDetector(
+        onTap: () => Get.toNamed(
+          Routes.ORDER_DETAIL, 
+          parameters: {'orderNo': orderNo}
+        ),
+        child: Container(
+          margin: EdgeInsets.only(bottom: 8.h),
+          padding: EdgeInsets.all(12.r),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(8.r),
+            border: Border.all(color: Colors.grey[300]!),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Text(
+                    '订单号：$orderNo',
+                    style: TextStyle(
+                      fontSize: 14.sp,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                  const Spacer(),
+                  Text(
+                    status,
+                    style: TextStyle(
+                      fontSize: 14.sp,
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: 8.h),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if ((productImage ?? '').trim().isNotEmpty)
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(4.r),
+                      child: Image.network(
+                        productImage,
+                        width: 60.w,
+                        height: 60.w,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          // 图片加载失败时直接不显示图片区域
+                          return SizedBox.shrink();
+                        },
+                      ),
+                    ),
+                  if ((productImage ?? '').trim().isNotEmpty)
+                    SizedBox(width: 12.w),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          productName,
+                          style: TextStyle(
+                            fontSize: 14.sp,
+                            fontWeight: FontWeight.w500,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        SizedBox(height: 4.h),
+                        Text(
+                          '¥$price × $quantity${items.length > 1 ? ' 等${items.length}件商品' : ''}',
+                          style: TextStyle(
+                            fontSize: 12.sp,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: 8.h),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  Text(
+                    '实付：',
+                    style: TextStyle(
+                      fontSize: 12.sp,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                  Text(
+                    '¥$totalAmount',
+                    style: TextStyle(
+                      fontSize: 16.sp,
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      );
+    } catch (e) {
+      debugPrint('构建订单卡片失败: $e');
+      return Container(
         margin: EdgeInsets.only(bottom: 8.h),
         padding: EdgeInsets.all(12.r),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(8.r),
-          border: Border.all(color: Colors.grey[300]!),
+          border: Border.all(color: Colors.red[300]!),
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Text(
-                  '订单号：${order['order_no']}',
-                  style: TextStyle(
-                    fontSize: 14.sp,
-                    color: Colors.grey[600],
-                  ),
-                ),
-                const Spacer(),
-                Text(
-                  status,
-                  style: TextStyle(
-                    fontSize: 14.sp,
-                    color: AppColors.primary,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-            SizedBox(height: 8.h),
-            Row(
-              children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(4.r),
-                  child: Image.network(
-                    firstItem['product_image'],
-                    width: 60.w,
-                    height: 60.w,
-                    fit: BoxFit.cover,
-                  ),
-                ),
-                SizedBox(width: 12.w),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        firstItem['product_name'],
-                        style: TextStyle(
-                          fontSize: 14.sp,
-                          fontWeight: FontWeight.w500,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      SizedBox(height: 4.h),
-                      Text(
-                        '¥${firstItem['price']} × ${firstItem['quantity']}${items.length > 1 ? ' 等${items.length}件商品' : ''}',
-                        style: TextStyle(
-                          fontSize: 12.sp,
-                          color: Colors.grey[600],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            SizedBox(height: 8.h),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                Text(
-                  '实付：',
-                  style: TextStyle(
-                    fontSize: 12.sp,
-                    color: Colors.grey[600],
-                  ),
-                ),
-                Text(
-                  '¥${order['total_amount']}',
-                  style: TextStyle(
-                    fontSize: 16.sp,
-                    color: AppColors.primary,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-          ],
+        child: Text(
+          '订单数据解析失败',
+          style: TextStyle(
+            fontSize: 14.sp,
+            color: Colors.red,
+          ),
         ),
-      ),
-    );
+      );
+    }
   }
 
   String _getOrderStatusText(String status) {

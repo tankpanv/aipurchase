@@ -154,24 +154,77 @@ class ChatTravelMarkdownView extends GetView<AiTravelAssistantController> {
               
               // 订单列表
               if (command['order_list'] != null) {
-                final orders = List<Map<String, dynamic>>.from(command['order_list']);
+                List<Map<String, dynamic>> orders = [];
+                try {
+                  orders = List<Map<String, dynamic>>.from(command['order_list']);
+                } catch (e) {
+                  debugPrint('Markdown视图：解析订单列表失败: $e');
+                }
                 if (orders.isNotEmpty) {
                   markdownText.writeln("#### 订单列表\n");
                   
                   for (final order in orders) {
-                    final status = _getOrderStatusText(order['status'] as String);
-                    markdownText.writeln("- **订单号**: ${order['order_no']}");
-                    markdownText.writeln("  - 状态: $status");
-                    markdownText.writeln("  - 总金额: ¥${order['total_amount']}");
-                    
-                    if (order['items'] != null) {
-                      final items = List<Map<String, dynamic>>.from(order['items']);
-                      markdownText.writeln("  - 商品清单:");
-                      for (final item in items) {
-                        markdownText.writeln("    - ${item['product_name']} × ${item['quantity']} = ¥${item['price'] * (item['quantity'] as num)}");
+                    try {
+                      final status = _getOrderStatusText(order['status']?.toString() ?? '未知状态');
+                      markdownText.writeln("- **订单号**: ${order['order_no'] ?? '未知订单号'}");
+                      markdownText.writeln("  - 状态: $status");
+                      markdownText.writeln("  - 总金额: ¥${order['total_amount'] ?? 0}");
+                      
+                      if (order['items'] != null) {
+                        List<Map<String, dynamic>> items = [];
+                        try {
+                          items = List<Map<String, dynamic>>.from(order['items']);
+                        } catch (e) {
+                          debugPrint('Markdown视图：解析订单项失败: $e');
+                        }
+                        
+                        if (items.isNotEmpty) {
+                          markdownText.writeln("  - 商品清单:");
+                          for (final item in items) {
+                            try {
+                              // 检查商品数据结构
+                              if (item.containsKey('product') && item['product'] is Map) {
+                                // 新数据结构
+                                final product = item['product'] as Map<String, dynamic>? ?? {};
+                                final productName = product['name']?.toString() ?? '未知商品';
+                                final price = item['price'] ?? product['price'] ?? 0;
+                                final quantity = item['quantity'] ?? 1;
+                                final subtotal = price * (quantity as num);
+                                
+                                markdownText.writeln("    - $productName × $quantity = ¥$subtotal");
+                              } else if (item.containsKey('deleted_product') && item['deleted_product'] is Map) {
+                                // 已删除商品
+                                final deletedProduct = item['deleted_product'] as Map<String, dynamic>? ?? {};
+                                final productName = deletedProduct['product_name']?.toString() ?? '已删除商品';
+                                final price = item['price'] ?? deletedProduct['price'] ?? 0;
+                                final quantity = item['quantity'] ?? 1;
+                                final subtotal = price * (quantity as num);
+                                
+                                markdownText.writeln("    - $productName × $quantity = ¥$subtotal");
+                              } else {
+                                // 旧数据结构
+                                final productName = item['product_name']?.toString() ?? '未知商品';
+                                final price = item['price'] ?? 0;
+                                final quantity = item['quantity'] ?? 1;
+                                final subtotal = price * (quantity as num? ?? 1);
+                                
+                                markdownText.writeln("    - $productName × $quantity = ¥$subtotal");
+                              }
+                            } catch (e) {
+                              debugPrint('Markdown视图：解析商品信息失败: $e');
+                              markdownText.writeln("    - 商品信息解析失败");
+                            }
+                          }
+                        } else {
+                          markdownText.writeln("  - 暂无商品数据");
+                        }
                       }
+                      markdownText.writeln("");
+                    } catch (e) {
+                      debugPrint('Markdown视图：解析订单失败: $e');
+                      markdownText.writeln("- **订单解析失败**");
+                      markdownText.writeln("");
                     }
-                    markdownText.writeln("");
                   }
                 }
               }

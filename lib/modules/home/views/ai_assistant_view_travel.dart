@@ -346,15 +346,15 @@ class AiAssistantTravelView extends GetView<AiTravelAssistantController> {
       
       // 如果是网络搜索智能体，显示搜索相关功能区域
       if (agentId == 'web_search') {
-        return Container(
-          padding: EdgeInsets.all(16.r),
-          color: Colors.grey[50],
-          child: Column(
-            children: [
+    return Container(
+      padding: EdgeInsets.all(16.r),
+      color: Colors.grey[50],
+      child: Column(
+        children: [
 
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
                   _buildFeatureButton(Icons.medical_services, '健康知识'),
                   _buildFeatureButton(Icons.school, '教育资源'),
                   _buildFeatureButton(Icons.science, '科技新闻'),
@@ -372,9 +372,9 @@ class AiAssistantTravelView extends GetView<AiTravelAssistantController> {
         color: Colors.grey[50],
         child: Column(
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
                 _buildFeatureButton(Icons.directions_car, '路径规划'),
                 _buildFeatureButton(Icons.train, '旅行规划'),
                 _buildFeatureButton(Icons.directions_bus, '天气查询'),
@@ -382,9 +382,9 @@ class AiAssistantTravelView extends GetView<AiTravelAssistantController> {
               ],
             ),
      
-          ],
-        ),
-      );
+        ],
+      ),
+    );
     });
   }
   
@@ -433,26 +433,26 @@ class AiAssistantTravelView extends GetView<AiTravelAssistantController> {
         message = '点击上方功能按钮开始探索网络资讯';
       }
       
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
               iconData,
-              size: 80.r,
-              color: Colors.grey[300],
-            ),
-            SizedBox(height: 16.h),
-            Text(
+            size: 80.r,
+            color: Colors.grey[300],
+          ),
+          SizedBox(height: 16.h),
+          Text(
               message,
-              style: TextStyle(
-                fontSize: 16.sp,
-                color: Colors.grey[600],
-              ),
+            style: TextStyle(
+              fontSize: 16.sp,
+              color: Colors.grey[600],
             ),
-          ],
-        ),
-      );
+          ),
+        ],
+      ),
+    );
     });
   }
   
@@ -486,34 +486,47 @@ class AiAssistantTravelView extends GetView<AiTravelAssistantController> {
     List<Map<String, dynamic>>? orders;
     List<Map<String, dynamic>>? travelPlans;
     
+    bool isJsonResponse = false;
+    String displayContent = content;
+    
     if (!isUser && !isThinking && !isStreamingLastMessage) {
       try {
-        aiResponse = json.decode(content);
-        if (aiResponse?['commands'] != null) {
-          final commands = List<Map<String, dynamic>>.from(aiResponse!['commands']);
-          debugPrint('commands: $commands');
-          for (final command in commands) {
-            if (command['found_products'] != null) {
-              products = List<Map<String, dynamic>>.from(command['found_products']);
-              break;
-            }
-            if (command['address_list'] != null) {
-              addresses = List<Map<String, dynamic>>.from(command['address_list']);
-              break;
-            }
-            if (command['order_list'] != null) {
-              orders = List<Map<String, dynamic>>.from(command['order_list']);
-              break;
-            }
-            if (command['travel_plans'] != null) {
-              travelPlans = List<Map<String, dynamic>>.from(command['travel_plans']);
-              break;
+        // 检查内容是否以{开头和}结尾，这是JSON的特征
+        if (content.trim().startsWith('{') && content.trim().endsWith('}')) {
+          aiResponse = json.decode(content);
+          isJsonResponse = true;
+          
+          // 提取显示内容
+          if (aiResponse?['content'] != null) {
+            displayContent = aiResponse!['content'];
+          }
+          
+          // 提取各种数据
+          if (aiResponse?['commands'] != null) {
+            final commands = List<Map<String, dynamic>>.from(aiResponse!['commands']);
+            debugPrint('commands: $commands');
+            for (final command in commands) {
+              if (command['found_products'] != null) {
+                products = List<Map<String, dynamic>>.from(command['found_products']);
+              }
+              if (command['address_list'] != null) {
+                addresses = List<Map<String, dynamic>>.from(command['address_list']);
+              }
+              if (command['order_list'] != null) {
+                orders = List<Map<String, dynamic>>.from(command['order_list']);
+              }
+              if (command['travel_plans'] != null) {
+                travelPlans = List<Map<String, dynamic>>.from(command['travel_plans']);
+              }
             }
           }
         }
       } catch (e) {
         // 解析失败，作为普通文本处理
         debugPrint('解析AI返回内容失败: $e');
+        // 不要再使用默认的错误信息替换了，而是保留原始内容
+        displayContent = content;
+        isJsonResponse = false;
       }
     }
 
@@ -526,7 +539,7 @@ class AiAssistantTravelView extends GetView<AiTravelAssistantController> {
           if (!isUser && controller.selectedAgent.value != null && !isThinking)
             Padding(
               padding: EdgeInsets.only(left: 48.w, bottom: 4.h),
-              child: Row(
+      child: Row(
                 children: [
                   Icon(
                     _getIconData(controller.selectedAgent.value!.iconId),
@@ -584,253 +597,258 @@ class AiAssistantTravelView extends GetView<AiTravelAssistantController> {
               ),
             ),
           Row(
-            mainAxisAlignment:
-                isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (!isUser) ...[
-                CircleAvatar(
-                  radius: 20.r,
-                  backgroundColor: AppColors.primary,
+        mainAxisAlignment:
+            isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (!isUser) ...[
+            CircleAvatar(
+              radius: 20.r,
+              backgroundColor: AppColors.primary,
                   child: Icon(
                     controller.selectedAgent.value != null 
                         ? _getIconData(controller.selectedAgent.value!.iconId) 
                         : Icons.directions_car, 
                     color: Colors.white
                   ),
-                ),
-                SizedBox(width: 8.w),
-              ],
-              Flexible(
-                child: Container(
-                  padding: EdgeInsets.all(12.r),
-                  decoration: BoxDecoration(
-                    color: isUser
-                        ? AppColors.primary
-                        : Colors.grey[200],
-                    borderRadius: BorderRadius.circular(16.r),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      if (!isUser && aiResponse != null)
-                        Text(
-                          aiResponse['content'] ?? content,
-                          style: TextStyle(
-                            color: isUser ? Colors.white : Colors.black,
-                            fontSize: 14.sp,
-                          ),
-                        )
-                      else if (isStreamingLastMessage)
-                        Obx(() {
-                          // 使用Obx监听流式响应内容变化
-                          return Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              MarkdownBody(
-                                data: controller.currentStreamResponse.value,
-                                styleSheet: MarkdownStyleSheet.fromTheme(Theme.of(Get.context!)).copyWith(
-                                  p: TextStyle(
-                                    color: Colors.black,
-                                    fontSize: 14.sp,
-                                  ),
-                                  h1: TextStyle(
-                                    color: Colors.black,
-                                    fontSize: 18.sp,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                  h2: TextStyle(
-                                    color: Colors.black,
-                                    fontSize: 16.sp,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                  h3: TextStyle(
-                                    color: Colors.black,
-                                    fontSize: 15.sp,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                  code: TextStyle(
-                                    fontSize: 13.sp,
-                                    backgroundColor: Colors.grey[300],
-                                  ),
-                                  blockquote: TextStyle(
-                                    color: Colors.grey[700],
-                                    fontStyle: FontStyle.italic,
-                                  ),
-                                  codeblockDecoration: BoxDecoration(
-                                    color: Colors.grey[200],
-                                    borderRadius: BorderRadius.circular(4.r),
-                                  ),
-                                  codeblockPadding: EdgeInsets.all(8.r),
-                                  tableBody: TextStyle(fontSize: 14.sp),
-                                  tableHead: TextStyle(fontWeight: FontWeight.bold, fontSize: 14.sp),
-                                ),
-                                selectable: true,
-                                shrinkWrap: true,
-                                fitContent: true,
-                                builders: {
-                                  'code': CodeElementBuilder(),
-                                },
-                                onTapLink: (text, href, title) {
-                                  if (href != null) {
-                                    _launchUrl(href);
-                                  }
-                                },
+            ),
+            SizedBox(width: 8.w),
+          ],
+          Flexible(
+            child: Container(
+              padding: EdgeInsets.all(12.r),
+              decoration: BoxDecoration(
+                color: isUser
+                    ? AppColors.primary
+                    : Colors.grey[200],
+                borderRadius: BorderRadius.circular(16.r),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (!isUser && isJsonResponse && aiResponse != null)
+                    // JSON格式响应处理
+                    Text(
+                      displayContent,
+                      style: TextStyle(
+                        color: isUser ? Colors.white : Colors.black,
+                        fontSize: 14.sp,
+                      ),
+                    )
+                  else if (isStreamingLastMessage)
+                    // 流式响应处理
+                    Obx(() {
+                      // 使用Obx监听流式响应内容变化
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          MarkdownBody(
+                            data: controller.currentStreamResponse.value,
+                            styleSheet: MarkdownStyleSheet.fromTheme(Theme.of(Get.context!)).copyWith(
+                              p: TextStyle(
+                                color: Colors.black,
+                                fontSize: 14.sp,
                               ),
-                              if (controller.isStreamResponding.value) 
-                                Padding(
-                                  padding: EdgeInsets.only(top: 8.h),
-                                  child: Row(
-                                    children: [
-                                      Container(
-                                        width: 6.r,
-                                        height: 6.r,
-                                        decoration: BoxDecoration(
-                                          color: AppColors.primary,
-                                          shape: BoxShape.circle,
-                                        ),
-                                      ),
-                                      SizedBox(width: 4.w),
-                                      Container(
-                                        width: 6.r,
-                                        height: 6.r,
-                                        decoration: BoxDecoration(
-                                          color: AppColors.primary.withOpacity(0.7),
-                                          shape: BoxShape.circle,
-                                        ),
-                                      ),
-                                      SizedBox(width: 4.w),
-                                      Container(
-                                        width: 6.r,
-                                        height: 6.r,
-                                        decoration: BoxDecoration(
-                                          color: AppColors.primary.withOpacity(0.4),
-                                          shape: BoxShape.circle,
-                                        ),
-                                      ),
-                                    ],
+                              h1: TextStyle(
+                                color: Colors.black,
+                                fontSize: 18.sp,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              h2: TextStyle(
+                                color: Colors.black,
+                                fontSize: 16.sp,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              h3: TextStyle(
+                                color: Colors.black,
+                                fontSize: 15.sp,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              code: TextStyle(
+                                fontSize: 13.sp,
+                                backgroundColor: Colors.grey[300],
+                              ),
+                              blockquote: TextStyle(
+                                color: Colors.grey[700],
+                                fontStyle: FontStyle.italic,
+                              ),
+                              codeblockDecoration: BoxDecoration(
+                                color: Colors.grey[200],
+                                borderRadius: BorderRadius.circular(4.r),
+                              ),
+                              codeblockPadding: EdgeInsets.all(8.r),
+                              tableBody: TextStyle(fontSize: 14.sp),
+                              tableHead: TextStyle(fontWeight: FontWeight.bold, fontSize: 14.sp),
+                            ),
+                            selectable: true,
+                            shrinkWrap: true,
+                            fitContent: true,
+                            builders: {
+                              'code': CodeElementBuilder(),
+                            },
+                            onTapLink: (text, href, title) {
+                              if (href != null) {
+                                _launchUrl(href);
+                              }
+                            },
+                          ),
+                          if (controller.isStreamResponding.value) 
+                            Padding(
+                              padding: EdgeInsets.only(top: 8.h),
+                              child: Row(
+                                children: [
+                                  Container(
+                                    width: 6.r,
+                                    height: 6.r,
+                                    decoration: BoxDecoration(
+                                      color: AppColors.primary,
+                                      shape: BoxShape.circle,
+                                    ),
                                   ),
-                                ),
-                            ],
-                          );
-                        })
-                      else if (isUser)
+                                  SizedBox(width: 4.w),
+                                  Container(
+                                    width: 6.r,
+                                    height: 6.r,
+                                    decoration: BoxDecoration(
+                                      color: AppColors.primary.withOpacity(0.7),
+                                      shape: BoxShape.circle,
+                                    ),
+                                  ),
+                                  SizedBox(width: 4.w),
+                                  Container(
+                                    width: 6.r,
+                                    height: 6.r,
+                                    decoration: BoxDecoration(
+                                      color: AppColors.primary.withOpacity(0.4),
+                                      shape: BoxShape.circle,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                        ],
+                      );
+                    })
+                  else if (isUser)
+                    // 用户消息处理
+                    Text(
+                      content,
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 14.sp,
+                      ),
+                    )
+                  else if (isThinking)
+                    // 思考中状态处理
+                    Row(
+                      children: [
                         Text(
                           content,
                           style: TextStyle(
-                            color: Colors.white,
+                            color: Colors.black,
                             fontSize: 14.sp,
+                            fontStyle: FontStyle.italic,
                           ),
-                        )
-                      else if (isThinking)
-                        Row(
-                          children: [
-                            Text(
-                              content,
-                              style: TextStyle(
-                                color: Colors.black,
-                                fontSize: 14.sp,
-                                fontStyle: FontStyle.italic,
-                              ),
-                            ),
-                            SizedBox(width: 8.w),
-                            SizedBox(
-                              width: 12.r,
-                              height: 12.r,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
-                              ),
-                            ),
-                          ],
-                        )
-                      else
-                        MarkdownBody(
-                          data: content,
-                          styleSheet: MarkdownStyleSheet.fromTheme(Theme.of(Get.context!)).copyWith(
-                            p: TextStyle(
-                              color: Colors.black,
-                              fontSize: 14.sp,
-                            ),
-                            h1: TextStyle(
-                              color: Colors.black,
-                              fontSize: 18.sp,
-                              fontWeight: FontWeight.bold,
-                            ),
-                            h2: TextStyle(
-                              color: Colors.black,
-                              fontSize: 16.sp,
-                              fontWeight: FontWeight.bold,
-                            ),
-                            h3: TextStyle(
-                              color: Colors.black,
-                              fontSize: 15.sp,
-                              fontWeight: FontWeight.bold,
-                            ),
-                            code: TextStyle(
-                              fontSize: 13.sp,
-                              backgroundColor: Colors.grey[300],
-                            ),
-                            blockquote: TextStyle(
-                              color: Colors.grey[700],
-                              fontStyle: FontStyle.italic,
-                            ),
-                            codeblockDecoration: BoxDecoration(
-                              color: Colors.grey[200],
-                              borderRadius: BorderRadius.circular(4.r),
-                            ),
-                            codeblockPadding: EdgeInsets.all(8.r),
-                            tableBody: TextStyle(fontSize: 14.sp),
-                            tableHead: TextStyle(fontWeight: FontWeight.bold, fontSize: 14.sp),
+                        ),
+                        SizedBox(width: 8.w),
+                        SizedBox(
+                          width: 12.r,
+                          height: 12.r,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
                           ),
-                          selectable: true,
-                          shrinkWrap: true,
-                          fitContent: true,
-                          builders: {
-                            'code': CodeElementBuilder(),
-                          },
-                          onTapLink: (text, href, title) {
-                            if (href != null) {
-                              _launchUrl(href);
-                            }
-                          },
                         ),
-                      if (products != null && products.isNotEmpty) ...[
-                        SizedBox(height: 16.h),
-                        ...products.map((product) => _buildProductCard(product)),
                       ],
-                      if (addresses != null && addresses.isNotEmpty) ...[
-                        SizedBox(height: 16.h),
-                        ...addresses.map((address) => _buildAddressCard(address)),
-                      ],
-                      if (orders != null && orders.isNotEmpty) ...[
-                        SizedBox(height: 16.h),
-                        ...orders.map((order) => _buildOrderCard(order)),
-                      ],
-                      if (travelPlans != null && travelPlans.isNotEmpty) ...[
-                        SizedBox(height: 16.h),
-                        ...travelPlans.map((plan) => _buildTravelPlanCard(plan)),
-                      ],
-                      SizedBox(height: 4.h),
-                      Text(
-                        '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}',
-                        style: TextStyle(
-                          fontSize: 10.sp,
-                          color: isUser ? Colors.white70 : Colors.grey,
+                    )
+                  else
+                    // 普通文本/Markdown处理
+                    MarkdownBody(
+                      data: displayContent,
+                      styleSheet: MarkdownStyleSheet.fromTheme(Theme.of(Get.context!)).copyWith(
+                        p: TextStyle(
+                          color: Colors.black,
+                          fontSize: 14.sp,
                         ),
+                        h1: TextStyle(
+                          color: Colors.black,
+                          fontSize: 18.sp,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        h2: TextStyle(
+                          color: Colors.black,
+                          fontSize: 16.sp,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        h3: TextStyle(
+                          color: Colors.black,
+                          fontSize: 15.sp,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        code: TextStyle(
+                          fontSize: 13.sp,
+                          backgroundColor: Colors.grey[300],
+                        ),
+                        blockquote: TextStyle(
+                          color: Colors.grey[700],
+                          fontStyle: FontStyle.italic,
+                        ),
+                        codeblockDecoration: BoxDecoration(
+                          color: Colors.grey[200],
+                          borderRadius: BorderRadius.circular(4.r),
+                        ),
+                        codeblockPadding: EdgeInsets.all(8.r),
+                        tableBody: TextStyle(fontSize: 14.sp),
+                        tableHead: TextStyle(fontWeight: FontWeight.bold, fontSize: 14.sp),
                       ),
-                    ],
+                      selectable: true,
+                      shrinkWrap: true,
+                      fitContent: true,
+                      builders: {
+                        'code': CodeElementBuilder(),
+                      },
+                      onTapLink: (text, href, title) {
+                        if (href != null) {
+                          _launchUrl(href);
+                        }
+                      },
                   ),
-                ),
+                  if (products != null && products.isNotEmpty) ...[
+                    SizedBox(height: 16.h),
+                    ...products.map((product) => _buildProductCard(product)),
+                  ],
+                  if (addresses != null && addresses.isNotEmpty) ...[
+                    SizedBox(height: 16.h),
+                    ...addresses.map((address) => _buildAddressCard(address)),
+                  ],
+                  if (orders != null && orders.isNotEmpty) ...[
+                    SizedBox(height: 16.h),
+                    ...orders.map((order) => _buildOrderCard(order)),
+                  ],
+                  if (travelPlans != null && travelPlans.isNotEmpty) ...[
+                    SizedBox(height: 16.h),
+                    ...travelPlans.map((plan) => _buildTravelPlanCard(plan)),
+                  ],
+                  SizedBox(height: 4.h),
+                  Text(
+                    '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}',
+                    style: TextStyle(
+                      fontSize: 10.sp,
+                      color: isUser ? Colors.white70 : Colors.grey,
+                    ),
+                  ),
+                ],
               ),
-              if (isUser) ...[
-                SizedBox(width: 8.w),
-                CircleAvatar(
-                  radius: 20.r,
-                  backgroundColor: AppColors.primary,
-                  child: const Icon(Icons.person, color: Colors.white),
-                ),
-              ],
+            ),
+          ),
+          if (isUser) ...[
+            SizedBox(width: 8.w),
+            CircleAvatar(
+              radius: 20.r,
+              backgroundColor: AppColors.primary,
+              child: const Icon(Icons.person, color: Colors.white),
+            ),
+          ],
             ],
           ),
         ],
@@ -875,24 +893,24 @@ class AiAssistantTravelView extends GetView<AiTravelAssistantController> {
             child: imageUrl.isNotEmpty 
                 ? Image.network(
                     imageUrl,
-                    width: 60.w,
-                    height: 60.w,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Container(
-                        width: 60.w,
-                        height: 60.w,
-                        color: Colors.grey[200],
-                        child: Icon(Icons.image_not_supported, color: Colors.grey),
-                      );
-                    },
+              width: 60.w,
+              height: 60.w,
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) {
+                return Container(
+                  width: 60.w,
+                  height: 60.w,
+                  color: Colors.grey[200],
+                  child: Icon(Icons.image_not_supported, color: Colors.grey),
+                );
+              },
                   )
                 : Container(
                     width: 60.w,
                     height: 60.w,
                     color: Colors.grey[200],
                     child: Icon(Icons.image_not_supported, color: Colors.grey),
-                  ),
+            ),
           ),
           SizedBox(width: 8.w),
           Expanded(
@@ -926,105 +944,17 @@ class AiAssistantTravelView extends GetView<AiTravelAssistantController> {
   }
 
   Widget _buildAddressCard(Map<String, dynamic> address) {
-    // 安全获取字段值
-    final String name = address['name']?.toString() ?? '';
-    final String phone = address['phone']?.toString() ?? '';
-    final bool isDefault = address['is_default'] == true;
-    final String province = address['province']?.toString() ?? '';
-    final String city = address['city']?.toString() ?? '';
-    final String district = address['district']?.toString() ?? '';
-    final String detail = address['detail']?.toString() ?? '';
-    
-    return Container(
-      margin: EdgeInsets.only(bottom: 8.h),
-      padding: EdgeInsets.all(12.r),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(8.r),
-        border: Border.all(color: Colors.grey[300]!),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  name,
-                  style: TextStyle(
-                    fontSize: 16.sp,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-              if (phone.isNotEmpty) ...[
-                SizedBox(width: 12.w),
-                Text(
-                  phone,
-                  style: TextStyle(
-                    fontSize: 14.sp,
-                    color: Colors.grey[600],
-                  ),
-                ),
-              ],
-              if (isDefault) ...[
-                SizedBox(width: 8.w),
-                Container(
-                  padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
-                  decoration: BoxDecoration(
-                    color: AppColors.primary.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(4.r),
-                  ),
-                  child: Text(
-                    '默认',
-                    style: TextStyle(
-                      fontSize: 12.sp,
-                      color: AppColors.primary,
-                    ),
-                  ),
-                ),
-              ],
-            ],
-          ),
-          SizedBox(height: 8.h),
-          Text(
-            '$province $city $district $detail',
-            style: TextStyle(
-              fontSize: 14.sp,
-              color: Colors.grey[700],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildOrderCard(Map<String, dynamic> order) {
-    // 安全获取字段值
-    final List<Map<String, dynamic>> items = order['items'] != null 
-        ? List<Map<String, dynamic>>.from(order['items'])
-        : [];
-        
-    // 如果items为空，返回空的Container避免异常
-    if (items.isEmpty) {
-      return Container();
-    }
-    
-    final Map<String, dynamic> firstItem = items.first;
-    final String orderNo = order['order_no']?.toString() ?? '未知订单号';
-    final String status = _getOrderStatusText(order['status']?.toString() ?? '');
-    final String productImage = firstItem['product_image']?.toString() ?? '';
-    final String productName = firstItem['product_name']?.toString() ?? '未知商品';
-    final dynamic price = firstItem['price'] ?? 0;
-    final dynamic quantity = firstItem['quantity'] ?? 1;
-    final dynamic totalAmount = order['total_amount'] ?? 0;
-    
-    return GestureDetector(
-      onTap: () => Get.toNamed(
-        Routes.ORDER_DETAIL, 
-        parameters: {'orderNo': orderNo}
-      ),
-      child: Container(
+    try {
+      // 安全获取字段值
+      final String name = address['name']?.toString() ?? '';
+      final String phone = address['phone']?.toString() ?? '';
+      final bool isDefault = address['is_default'] == true;
+      final String province = address['province']?.toString() ?? '';
+      final String city = address['city']?.toString() ?? '';
+      final String district = address['district']?.toString() ?? '';
+      final String detail = address['detail']?.toString() ?? '';
+      
+      return Container(
         margin: EdgeInsets.only(bottom: 8.h),
         padding: EdgeInsets.all(12.r),
         decoration: BoxDecoration(
@@ -1037,103 +967,344 @@ class AiAssistantTravelView extends GetView<AiTravelAssistantController> {
           children: [
             Row(
               children: [
-                Text(
-                  '订单号：$orderNo',
-                  style: TextStyle(
-                    fontSize: 14.sp,
-                    color: Colors.grey[600],
-                  ),
-                ),
-                const Spacer(),
-                Text(
-                  status,
-                  style: TextStyle(
-                    fontSize: 14.sp,
-                    color: AppColors.primary,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-            SizedBox(height: 8.h),
-            Row(
-              children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(4.r),
-                  child: productImage.isNotEmpty
-                    ? Image.network(
-                        productImage,
-                        width: 60.w,
-                        height: 60.w,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return Container(
-                            width: 60.w,
-                            height: 60.w,
-                            color: Colors.grey[200],
-                            child: Icon(Icons.image_not_supported, color: Colors.grey),
-                          );
-                        },
-                      )
-                    : Container(
-                        width: 60.w,
-                        height: 60.w,
-                        color: Colors.grey[200],
-                        child: Icon(Icons.image_not_supported, color: Colors.grey),
-                      ),
-                ),
-                SizedBox(width: 12.w),
                 Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        productName,
-                        style: TextStyle(
-                          fontSize: 14.sp,
-                          fontWeight: FontWeight.w500,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      SizedBox(height: 4.h),
-                      Text(
-                        '¥$price × $quantity${items.length > 1 ? ' 等${items.length}件商品' : ''}',
-                        style: TextStyle(
-                          fontSize: 12.sp,
-                          color: Colors.grey[600],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            SizedBox(height: 8.h),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                Text(
-                  '实付：',
-                  style: TextStyle(
-                    fontSize: 12.sp,
-                    color: Colors.grey[600],
-                  ),
-                ),
-                Text(
-                  '¥$totalAmount',
+                  child: Text(
+                    name,
                   style: TextStyle(
                     fontSize: 16.sp,
-                    color: AppColors.primary,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
+                ),
+                if (phone.isNotEmpty) ...[
+                SizedBox(width: 12.w),
+                Text(
+                    phone,
+                  style: TextStyle(
+                    fontSize: 14.sp,
+                    color: Colors.grey[600],
+                  ),
+                ),
+                ],
+                if (isDefault) ...[
+                  SizedBox(width: 8.w),
+                  Container(
+                    padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(4.r),
+                    ),
+                    child: Text(
+                      '默认',
+                      style: TextStyle(
+                        fontSize: 12.sp,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                  ),
+                ],
               ],
+            ),
+            SizedBox(height: 8.h),
+            Text(
+              '$province $city $district $detail',
+              style: TextStyle(
+                fontSize: 14.sp,
+                color: Colors.grey[700],
+              ),
             ),
           ],
         ),
-      ),
-    );
+      );
+    } catch (e) {
+      debugPrint('构建地址卡片失败: $e, 地址数据: $address');
+      // 如果构建失败，返回一个简单的错误提示
+      return Container(
+        margin: EdgeInsets.only(bottom: 8.h),
+        padding: EdgeInsets.all(12.r),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(8.r),
+          border: Border.all(color: Colors.red[300]!),
+        ),
+        child: Text(
+          '地址数据解析失败',
+          style: TextStyle(
+            fontSize: 14.sp,
+            color: Colors.red,
+          ),
+        ),
+      );
+    }
+  }
+
+  Widget _buildOrderCard(Map<String, dynamic> order) {
+    try {
+      // 安全获取字段值
+      final String orderNo = order['order_no']?.toString() ?? '未知订单号';
+      final String status = _getOrderStatusText(order['status']?.toString() ?? '');
+      final dynamic totalAmount = order['total_amount'] ?? 0;
+      
+      // 处理订单项
+      final List<Map<String, dynamic>> items = [];
+      if (order['items'] != null) {
+        try {
+          items.addAll(List<Map<String, dynamic>>.from(order['items']));
+        } catch (e) {
+          debugPrint('订单项解析失败: $e');
+        }
+      }
+          
+      // 如果items为空，显示基本订单信息
+      if (items.isEmpty) {
+        return Container(
+          margin: EdgeInsets.only(bottom: 8.h),
+          padding: EdgeInsets.all(12.r),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(8.r),
+            border: Border.all(color: Colors.grey[300]!),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Text(
+                    '订单号：$orderNo',
+                    style: TextStyle(
+                      fontSize: 14.sp,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                  const Spacer(),
+                  Text(
+                    status,
+                    style: TextStyle(
+                      fontSize: 14.sp,
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: 8.h),
+              Text(
+                '暂无商品数据',
+                style: TextStyle(
+                  fontSize: 14.sp,
+                  color: Colors.grey[600],
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+              SizedBox(height: 8.h),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  Text(
+                    '实付：',
+                    style: TextStyle(
+                      fontSize: 12.sp,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                  Text(
+                    '¥$totalAmount',
+                    style: TextStyle(
+                      fontSize: 16.sp,
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        );
+      }
+      
+      // 安全获取第一个商品信息
+      Map<String, dynamic> firstItem;
+      try {
+        firstItem = items.first;
+      } catch (e) {
+        debugPrint('获取第一个商品失败: $e');
+        firstItem = {};
+      }
+      
+      // 检查是否是新的数据结构(有product字段)
+      bool isNewStructure = firstItem.containsKey('product') && firstItem['product'] is Map;
+      bool isDeletedProduct = firstItem.containsKey('deleted_product') && firstItem['deleted_product'] is Map;
+      
+      // 获取商品信息
+      String productName = '未知商品';
+      String productImage = '';
+      dynamic price = 0;
+      dynamic quantity = 1;
+      
+      try {
+        if (isNewStructure) {
+          // 新数据结构，从product字段中获取信息
+          final product = firstItem['product'] as Map<String, dynamic>? ?? {};
+          productName = product['name']?.toString() ?? '未知商品';
+          productImage = product['main_image_url']?.toString() ?? '';
+          price = firstItem['price'] ?? product['price'] ?? 0;
+          quantity = firstItem['quantity'] ?? 1;
+        } else if (isDeletedProduct) {
+          // 已删除商品结构
+          final deletedProduct = firstItem['deleted_product'] as Map<String, dynamic>? ?? {};
+          productName = deletedProduct['product_name']?.toString() ?? '已删除商品';
+          productImage = '';
+          price = firstItem['price'] ?? deletedProduct['price'] ?? 0;
+          quantity = firstItem['quantity'] ?? 1;
+        } else {
+          // 旧数据结构，直接从item中获取
+          productName = firstItem['product_name']?.toString() ?? '未知商品';
+          productImage = firstItem['product_image']?.toString() ?? '';
+          price = firstItem['price'] ?? 0;
+          quantity = firstItem['quantity'] ?? 1;
+        }
+      } catch (e) {
+        debugPrint('解析商品信息失败: $e');
+        productName = '商品信息解析失败';
+      }
+      
+      debugPrint('订单: $orderNo, 状态: $status, 商品: $productName, 价格: $price, 数量: $quantity');
+      
+      return GestureDetector(
+        onTap: () => Get.toNamed(
+          Routes.ORDER_DETAIL, 
+          parameters: {'orderNo': orderNo}
+        ),
+        child: Container(
+          margin: EdgeInsets.only(bottom: 8.h),
+          padding: EdgeInsets.all(12.r),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(8.r),
+            border: Border.all(color: Colors.grey[300]!),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Text(
+                    '订单号：$orderNo',
+                    style: TextStyle(
+                      fontSize: 14.sp,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                  const Spacer(),
+                  Text(
+                    status,
+                    style: TextStyle(
+                      fontSize: 14.sp,
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: 8.h),
+              Row(
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(4.r),
+                    child: productImage.isNotEmpty
+                      ? Image.network(
+                          productImage,
+                      width: 60.w,
+                      height: 60.w,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Container(
+                          width: 60.w,
+                          height: 60.w,
+                          color: Colors.grey[200],
+                          child: Icon(Icons.image_not_supported, color: Colors.grey),
+                        );
+                      },
+                        )
+                      : Container(
+                          width: 60.w,
+                          height: 60.w,
+                          color: Colors.grey[200],
+                          child: Icon(Icons.image_not_supported, color: Colors.grey),
+                    ),
+                  ),
+                  SizedBox(width: 12.w),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          productName,
+                          style: TextStyle(
+                            fontSize: 14.sp,
+                            fontWeight: FontWeight.w500,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        SizedBox(height: 4.h),
+                        Text(
+                          '¥$price × $quantity${items.length > 1 ? ' 等${items.length}件商品' : ''}',
+                          style: TextStyle(
+                            fontSize: 12.sp,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: 8.h),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  Text(
+                    '实付：',
+                    style: TextStyle(
+                      fontSize: 12.sp,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                  Text(
+                    '¥$totalAmount',
+                    style: TextStyle(
+                      fontSize: 16.sp,
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      );
+    } catch (e) {
+      debugPrint('构建订单卡片失败: $e');
+      return Container(
+        margin: EdgeInsets.only(bottom: 8.h),
+        padding: EdgeInsets.all(12.r),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(8.r),
+          border: Border.all(color: Colors.grey[300]!),
+        ),
+        child: Text(
+          '订单数据解析失败',
+          style: TextStyle(
+            fontSize: 14.sp,
+            color: Colors.red,
+          ),
+        ),
+      );
+    }
   }
   
   Widget _buildTravelPlanCard(Map<String, dynamic> plan) {
@@ -1162,10 +1333,10 @@ class AiAssistantTravelView extends GetView<AiTravelAssistantController> {
               Expanded(
                 child: Text(
                   title,
-                  style: TextStyle(
-                    fontSize: 16.sp,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.primary,
+                style: TextStyle(
+                  fontSize: 16.sp,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.primary,
                   ),
                 ),
               ),
@@ -1193,9 +1364,9 @@ class AiAssistantTravelView extends GetView<AiTravelAssistantController> {
                   Expanded(
                     child: Text(
                       dateRange,
-                      style: TextStyle(
-                        fontSize: 14.sp,
-                        color: Colors.grey[700],
+                    style: TextStyle(
+                      fontSize: 14.sp,
+                      color: Colors.grey[700],
                       ),
                     ),
                   ),
@@ -1212,9 +1383,9 @@ class AiAssistantTravelView extends GetView<AiTravelAssistantController> {
                   Expanded(
                     child: Text(
                       location,
-                      style: TextStyle(
-                        fontSize: 14.sp,
-                        color: Colors.grey[700],
+                    style: TextStyle(
+                      fontSize: 14.sp,
+                      color: Colors.grey[700],
                       ),
                     ),
                   ),
@@ -1229,9 +1400,9 @@ class AiAssistantTravelView extends GetView<AiTravelAssistantController> {
                 Expanded(
                   child: Text(
                     '价格: $price',
-                    style: TextStyle(
-                      fontSize: 14.sp,
-                      color: Colors.grey[700],
+                  style: TextStyle(
+                    fontSize: 14.sp,
+                    color: Colors.grey[700],
                     ),
                   ),
                 ),
@@ -1274,9 +1445,9 @@ class AiAssistantTravelView extends GetView<AiTravelAssistantController> {
         ],
       ),
       child: SafeArea(
-        child: Row(
-          children: [
-            IconButton(
+      child: Row(
+        children: [
+          IconButton(
               icon: Icon(Icons.psychology, color: AppColors.textSecondary),
               onPressed: controller.isAiResponding.value ? null : _showAgentList,
               padding: EdgeInsets.zero,
@@ -1287,31 +1458,31 @@ class AiAssistantTravelView extends GetView<AiTravelAssistantController> {
             ),
     
             SizedBox(width: 8.w),
-            Expanded(
-              child: TextField(
-                controller: controller.textController,
-                enabled: !controller.isAiResponding.value,
-                decoration: InputDecoration(
+          Expanded(
+            child: TextField(
+              controller: controller.textController,
+              enabled: !controller.isAiResponding.value,
+              decoration: InputDecoration(
                   hintText: controller.isAiResponding.value 
                       ? (controller.isStreamResponding.value ? '正在回答中...' : '正在思考中...') 
                       : '输入您的出行需求...',
-                  hintStyle: TextStyle(color: Colors.grey[400], fontSize: 14.sp),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(20.r),
-                    borderSide: BorderSide.none,
-                  ),
-                  filled: true,
-                  fillColor: Colors.grey[100],
-                  contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+                hintStyle: TextStyle(color: Colors.grey[400], fontSize: 14.sp),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(20.r),
+                  borderSide: BorderSide.none,
                 ),
-                onSubmitted: (value) {
-                  if (value.isNotEmpty && !controller.isAiResponding.value) {
-                    controller.handleUserInput(value);
-                  }
-                },
+                filled: true,
+                fillColor: Colors.grey[100],
+                contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
               ),
+              onSubmitted: (value) {
+                if (value.isNotEmpty && !controller.isAiResponding.value) {
+                  controller.handleUserInput(value);
+                }
+              },
             ),
-            SizedBox(width: 8.w),
+          ),
+          SizedBox(width: 8.w),
             Obx(() => controller.isStreamResponding.value
                 ? IconButton(
                     icon: Icon(Icons.stop, color: Colors.red),
@@ -1323,20 +1494,20 @@ class AiAssistantTravelView extends GetView<AiTravelAssistantController> {
                     ),
                   )
                 : IconButton(
-                    icon: Icon(
-                      Icons.send, 
-                      color: controller.isAiResponding.value || controller.textController.text.isEmpty 
-                          ? Colors.grey 
-                          : AppColors.primary
-                    ),
-                    onPressed: controller.isAiResponding.value 
-                        ? null 
-                        : () {
-                            final text = controller.textController.text.trim();
-                            if (text.isNotEmpty) {
-                              controller.handleUserInput(text);
-                            }
-                          },
+            icon: Icon(
+              Icons.send, 
+              color: controller.isAiResponding.value || controller.textController.text.isEmpty 
+                  ? Colors.grey 
+                  : AppColors.primary
+            ),
+            onPressed: controller.isAiResponding.value 
+                ? null 
+                : () {
+                    final text = controller.textController.text.trim();
+              if (text.isNotEmpty) {
+                controller.handleUserInput(text);
+              }
+            },
                     padding: EdgeInsets.zero,
                     constraints: BoxConstraints(
                       minWidth: 40.w,

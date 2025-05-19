@@ -492,19 +492,45 @@ class CartView extends GetView<CartController> {
                 Routes.ADDRESS_LIST,
                 arguments: {
                   'selectMode': true,
-                  'onSelected': (address) {
-                    final items = controller.selectedItems.map((item) => {
-                      'product_id': item.product!.id,
-                      'quantity': item.quantity,
-                    }).toList();
-
-                    orderController.createOrder(
-                      address.id,
-                      items,
-                    ).then((_) {
-                      // 创建订单成功后，清除已选商品
-                      controller.removeSelectedItems();
-                    });
+                  'onSelected': (address) async {
+                    try {
+                      // 准备商品数据，确保格式正确
+                      final items = controller.selectedItems.map((item) => {
+                        'product_id': item.product!.id,
+                        'quantity': item.quantity,
+                      }).toList();
+                      
+                      // 记录创建订单请求数据
+                      debugPrint('创建订单请求数据: addressId=${address.id}, items=$items');
+                      
+                      // 先创建订单
+                      await orderController.createOrder(
+                        address.id,
+                        items,
+                      );
+                      
+                      // 订单创建成功后，再删除已选商品
+                      // 使用try-catch单独处理移除购物车物品的操作
+                      try {
+                        await controller.removeSelectedItems();
+                        debugPrint('已选商品移除成功');
+                      } catch (e) {
+                        debugPrint('移除已选商品时发生错误: $e');
+                        // 即使移除失败，也不影响整体流程，只记录错误
+                      }
+                      
+                      // 刷新购物车列表
+                      await controller.fetchCartItems();
+                      
+                    } catch (e, stackTrace) {
+                      debugPrint('创建订单或处理购物车时出错: $e');
+                      debugPrint('错误堆栈: $stackTrace');
+                      Get.snackbar(
+                        '创建订单失败', 
+                        '请检查网络连接或稍后重试: ${e.toString().substring(0, e.toString().length > 100 ? 100 : e.toString().length)}',
+                        duration: const Duration(seconds: 5),
+                      );
+                    }
                   },
                 },
               );
